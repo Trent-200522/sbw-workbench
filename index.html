@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>商科实训 · 申报方案工作台</title>
+<script src="https://unpkg.com/mammoth@1.7.2/mammoth.browser.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#eef1f6;color:#1f2937;font-size:14px}
+button{font-family:inherit;cursor:pointer}
+header{position:sticky;top:0;z-index:20;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 28px;border-bottom:1px solid #e5e9f0}
+.logo{width:42px;height:42px;border-radius:10px;background:#1d4fa8;display:flex;align-items:center;justify-content:center;flex:none}
+.logo svg{width:24px;height:24px;fill:#fff}
+header h1{font-size:18px;color:#111827}
+header .sub{color:#6b7280;font-size:12px;margin-top:2px}
+.spacer{flex:1}
+.btn{background:#fff;border:1px solid #d5dce6;border-radius:8px;padding:8px 14px;font-size:13px;color:#374151;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:#1d4fa8;color:#1d4fa8}
+.btn-primary{background:#1d4fa8;border-color:#1d4fa8;color:#fff}
+.btn-primary:hover{background:#16408c;color:#fff}
+.btn-danger:hover{border-color:#dc2626;color:#dc2626}
+.btn-sm{padding:6px 10px;font-size:12px}
+main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
+.card{background:#fff;border:1px solid #e3e8ef;border-radius:12px;padding:18px}
+/* 待办 */
+.todos{background:#f4f7fc;border:1px solid #dbe4f0;margin-bottom:22px}
+.todos h2{font-size:15px;color:#1d4fa8;display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.todos h2 .cnt{background:#1d4fa8;color:#fff;border-radius:10px;font-size:12px;padding:1px 8px}
+.todo{display:flex;align-items:center;gap:12px;background:#e8eefb;border:1px solid #c9d8f2;border-radius:10px;padding:12px 16px;margin-bottom:10px}
+.todo.overdue{background:#fdecec;border-color:#f3c1c1}
+.todo .t{flex:1}
+.todo .t b{font-size:14px}
+.todo .t .meta{color:#6b7280;font-size:12px;margin-top:4px}
+.badge{border-radius:6px;font-size:11px;padding:2px 8px;color:#fff;background:#2563eb;margin-left:8px;vertical-align:2px}
+.badge.red{background:#dc2626}
+.badge.gray{background:#9ca3af}
+/* 页签 */
+.tabs{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+.tabs button{background:#fff;border:1px solid #d5dce6;border-radius:10px;padding:10px 18px;font-size:14px;color:#374151;display:inline-flex;gap:8px;align-items:center}
+.tabs button.on{background:#1d4fa8;border-color:#1d4fa8;color:#fff}
+.view{display:none}
+.view.on{display:block}
+.view-head{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.view-head h2{font-size:16px;color:#1d4fa8;display:flex;align-items:center;gap:8px}
+.view-head .cnt{color:#6b7280;font-size:12px;font-weight:normal}
+.view-head .hint{color:#6b7280;font-size:12px}
+.view-head input[type=text]{flex:1;min-width:200px;max-width:340px;margin-left:auto;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.item{background:#f8f9fb;display:flex;flex-direction:column;gap:8px}
+.item .head{display:flex;align-items:flex-start;gap:8px}
+.item .head b{flex:1;font-size:15px;line-height:1.4}
+.tag{flex:none;border-radius:6px;font-size:11px;padding:3px 8px;background:#e3ecfa;color:#1d4fa8}
+.tag.green{background:#e2f6e9;color:#15803d}
+.tag.orange{background:#fdf0e0;color:#b45309}
+.item .row{font-size:13px;color:#374151;line-height:1.6}
+.item .row .k{color:#6b7280}
+.item .row b{color:#111827}
+.item .acts{border-top:1px dashed #d8dee8;margin-top:auto;padding-top:10px;display:flex;gap:8px}
+/* 生成台 */
+.gen-wrap{display:grid;grid-template-columns:minmax(380px,5fr) 6fr;gap:18px;align-items:start}
+@media(max-width:960px){.gen-wrap{grid-template-columns:1fr}}
+.gen-left{display:flex;flex-direction:column;gap:16px}
+.gcard h3{font-size:14px;color:#1d4fa8;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:#6b7280;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px;font-family:inherit;background:#fff}
+.field textarea{min-height:90px;resize:vertical}
+.chk{display:flex;align-items:center;gap:10px;border:1px solid #e3e8ef;border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#fff;cursor:pointer}
+.chk:hover{border-color:#1d4fa8}
+.chk input{width:16px;height:16px;accent-color:#1d4fa8;flex:none}
+.chk .n{font-weight:600}
+.chk .m{color:#6b7280;font-size:12px}
+#genResult{width:100%;min-height:430px;border:1px solid #d5dce6;border-radius:10px;padding:14px;font-size:13px;line-height:1.8;font-family:inherit;resize:vertical;background:#fbfcfe}
+.gen-acts{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.llm-note{font-size:12px;color:#6b7280;background:#f4f7fc;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.6}
+/* 底部 */
+.foot{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
+@media(max-width:860px){.foot{grid-template-columns:1fr}}
+.foot h3{font-size:14px;color:#1d4fa8;margin-bottom:10px}
+.foot p{font-size:12px;color:#6b7280;line-height:1.7;margin-bottom:10px}
+/* 弹窗 */
+#mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto}
+#mask[hidden]{display:none}
+.modal{background:#fff;border-radius:14px;max-width:640px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal h3{font-size:16px;margin-bottom:16px;color:#111827}
+.modal .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm-10 9.5 10 5 10-5V14l-10 5-10-5v-2.5zm0 5 10 5 10-5V19l-10 5-10-5v-2.5z"/></svg></div>
+  <div><h1>商科实训 · 申报方案工作台</h1><div class="sub">产品 · 方案 · 政策，一键成稿</div></div>
+  <div class="spacer"></div>
+  <button class="btn" id="btnExport">⬇ 导出备份</button>
+  <button class="btn" id="btnImportTop">⬆ 导入恢复</button>
+  <input type="file" id="importFile" accept=".json" hidden>
+</header>
+<main>
+  <section class="card todos">
+    <h2>🕓 今天要处理 <span class="cnt" id="todoCnt">0</span><span class="spacer"></span><button class="btn btn-sm" id="btnAddTodo">＋ 新任务</button></h2>
+    <div id="todoList"></div>
+  </section>
+
+  <nav class="tabs">
+    <button data-tab="products" class="on">📦 产品资料库</button>
+    <button data-tab="hardware">🖥 硬件库</button>
+    <button data-tab="proposals">📄 方案文库</button>
+    <button data-tab="policies">🚩 政策资料库</button>
+    <button data-tab="gen">⚡ 方案生成台</button>
+  </nav>
+
+  <section class="view on" id="view-products">
+    <div class="view-head"><h2>📦 产品资料库 <span class="cnt" id="prodCnt"></span></h2>
+      <input type="text" id="prodSearch" placeholder="🔍 搜索产品名称/领域">
+      <button class="btn btn-primary" id="btnAddProduct">＋ 新增产品</button></div>
+    <div class="grid" id="prodGrid"></div>
+  </section>
+
+  <section class="view" id="view-hardware">
+    <div class="view-head"><h2>🖥 硬件库 <span class="hint">暂为产品资料库副本，可逐条编辑替换为真实硬件</span> <span class="cnt" id="hwCnt"></span></h2>
+      <input type="text" id="hwSearch" placeholder="🔍 搜索硬件名称/类别">
+      <button class="btn btn-primary" id="btnAddHw">＋ 新增硬件</button></div>
+    <div class="grid" id="hwGrid"></div>
+  </section>
+
+  <section class="view" id="view-proposals">
+    <div class="view-head"><h2>📄 方案文库 <span class="hint">历史申报书 / 建设方案，写新方案时作模板参考</span> <span class="cnt" id="propCnt"></span></h2>
+      <input type="text" id="propSearch" placeholder="🔍 搜索标题/客户/要点">
+      <button class="btn btn-primary" id="btnAddProp">＋ 新增方案</button></div>
+    <div class="grid" id="propGrid"></div>
+  </section>
+
+  <section class="view" id="view-policies">
+    <div class="view-head"><h2>🚩 政策资料库 <span class="hint">写方案时引用，作为申报的政策依据</span> <span class="cnt" id="polCnt"></span></h2>
+      <input type="text" id="polSearch" placeholder="🔍 搜索政策名/发文单位/关键词">
+      <button class="btn btn-primary" id="btnAddPol">＋ 新增政策</button></div>
+    <div class="grid" id="polGrid"></div>
+  </section>
+
+  <section class="view" id="view-gen">
+    <div class="view-head"><h2>⚡ 方案生成台 <span class="hint">勾选产品 + 硬件 + 政策 + 参考模板，一键生成申报书初稿框架</span></h2></div>
+    <div class="gen-wrap">
+      <div class="gen-left">
+        <div class="card gcard"><h3>📝 1. 项目基本信息</h3>
+          <div class="field"><label>项目名称</label><input id="fProject" placeholder="如：数字经济综合实训中心建设项目"></div>
+          <div class="field"><label>客户学校</label><input id="fSchool" placeholder="如：××大学××学院"></div>
+          <div class="field"><label>专业（用于政策智能匹配）</label><input id="fMajor" placeholder="如：人力资源管理 / 数字经济 / 物流管理"></div>
+          <div class="field"><label>方案类型</label><select id="fType"><option>项目申报书</option><option>建设方案</option><option>报价方案</option></select></div>
+          <div class="field" style="margin-bottom:0"><label>参考模板（可多选，来自方案文库）</label><div id="fTemplates" style="max-height:170px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div></div>
+        </div>
+        <div class="card gcard"><h3>📦 2. 勾选参与建设的产品</h3><div id="genProducts"></div></div>
+        <div class="card gcard"><h3>🖥 3. 勾选硬件配置（可选）</h3><div id="genHardware"></div></div>
+        <div class="card gcard"><h3>🚩 4. 勾选政策依据（按专业+产品智能匹配，可自由调整）<button class="btn btn-sm" id="btnPolMatch" type="button">🔄 重新匹配</button></h3><div id="genPolicies"></div></div>
+        <div class="card gcard"><h3>🔢 5. 字数选择</h3>
+          <div class="field"><label>整体最低字数</label><input id="fWordsTotal" type="number" min="0" step="500" value="8000"></div>
+          <div class="field" style="margin-bottom:0"><label>每章节最低字数</label><input id="fWordsChapter" type="number" min="0" step="100" value="500"></div>
+        </div>
+      </div>
+      <div class="card gcard">
+        <h3>🤖 大模型配置</h3>
+        <div class="field"><label>模型服务商</label><select id="llmProvider">
+          <option value="deepseek">DeepSeek</option><option value="qwen">通义千问（阿里）</option>
+          <option value="doubao">豆包（字节）</option><option value="custom">自定义（OpenAI 兼容接口）</option></select></div>
+        <div class="field"><label>API 接口地址（baseUrl）</label><input id="llmBase" placeholder="https://api.deepseek.com"></div>
+        <div class="field"><label>模型名称</label><input id="llmModel" placeholder="deepseek-chat"></div>
+        <div class="field"><label>API Key</label><input id="llmKey" type="password" placeholder="sk-... （仅保存在本机浏览器）"></div>
+        <div class="llm-note">未填 API Key 时，将使用本地模板拼装出初稿框架（不联网）；填写后调用大模型流式生成完整初稿。Key 只存 localStorage，不会上传任何第三方服务器。</div>
+        <button class="btn btn-primary" id="btnGen" style="width:100%;justify-content:center;padding:11px">⚡ 生成初稿</button>
+        <h3 style="margin-top:18px">📄 生成结果（可编辑，建议复制到 Word 继续完善）</h3>
+        <textarea id="genResult" placeholder="生成结果将显示在这里……"></textarea>
+        <div class="gen-acts">
+          <button class="btn btn-primary" id="btnCopyAll">⧉ 复制全文</button>
+          <button class="btn" id="btnSaveProp">💾 存入方案文库</button>
+          <button class="btn" id="btnWord">📑 导出 Word</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="foot">
+    <div class="card"><h3>数据安全</h3>
+      <p>所有数据保存在本浏览器 localStorage 中，刷新、关闭页面不丢失。建议每周导出一次 JSON 备份。<br>页面部署到线上后为公开链接，请勿预填真实敏感数据。</p>
+      <button class="btn" id="btnExport2">⬇ 导出 JSON</button>
+      <button class="btn" id="btnImport2" style="margin-left:8px">⬆ 导入恢复</button></div>
+    <div class="card"><h3>数据清理</h3>
+      <p>「清空示例数据」只删除预置示例，保留您自己录入的内容；「清空全部」将删除所有数据（需二次确认）。</p>
+      <button class="btn btn-danger" id="btnClearSeed">🗑 清空示例数据</button>
+      <button class="btn btn-danger" id="btnClearAll" style="margin-left:8px">⚠ 清空全部数据</button></div>
+  </section>
+</main>
+<div id="mask" hidden><div class="modal" id="modalBox"></div></div>
+<script src="app.js"></script>
+</body>
+</html>
