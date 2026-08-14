@@ -88,6 +88,10 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .fmtrow b{font-size:12px;color:#374151}
 .fmt-head{display:grid;grid-template-columns:86px repeat(6,minmax(64px,1fr)) 30px;gap:5px;margin-bottom:6px}
 .fmt-head span{font-size:11px;color:#6b7280}
+.skillcard{border:1px solid #e3e8ef;border-radius:12px;background:#fff;padding:16px 18px;box-shadow:0 2px 10px rgba(16,42,90,.05)}
+.skillcard h3{margin:0 0 10px;font-size:15px}
+.skillhead{background:linear-gradient(135deg,#16336b,#2f5cc4);border-radius:12px;color:#fff;padding:16px 20px;margin-bottom:16px}
+.skillhead b{font-size:18px}
 .chatbox{border:1px solid #e3e8ef;border-radius:10px;background:#fbfcfe;overflow:hidden}
 .chatlog{min-height:140px;max-height:260px;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
 .bub{max-width:88%;border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
@@ -118,6 +122,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
     <button data-tab="proposals">📄 方案文库</button>
     <button data-tab="policies">🚩 政策资料库</button>
     <button data-tab="formats">🎨 文章格式库</button>
+    <button data-tab="skills">🧩 Skill 技能库</button>
     <button data-tab="gen">⚡ 方案生成台</button>
   </nav>
 
@@ -155,6 +160,22 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
     <div class="grid" id="fmtGrid"></div>
   </section>
 
+  <section class="view" id="view-skills">
+    <div class="skillhead"><b>🧩 Skill 技能库</b>　管理生成时可套用的技能：新建、导入外部技能（.json / .md / .txt）、一键安装推荐技能；生成时在方案生成台第 7 步选用。</div>
+    <div class="grid">
+      <div class="skillcard"><h3>＋ 新建技能</h3>
+        <div class="field"><label>技能名称 *</label><input id="skName" placeholder="如：去 AI 味润色"></div>
+        <div class="field"><label>简介</label><input id="skDesc" placeholder="一句话说明用途"></div>
+        <div class="field"><label>技能提示词（生成时注入大模型指令）</label><textarea id="skPrompt" style="min-height:110px" placeholder="写清楚这个技能让大模型做什么，如：降低 AI 感的改写规则…"></textarea></div>
+        <button class="btn btn-primary" id="btnSkillCreate" type="button">保存技能</button></div>
+      <div class="skillcard"><h3>⬆ 导入外部技能</h3>
+        <p class="hint">支持 .json（含 name/prompt）、.md、.txt（整文作为提示词，文件名当技能名）。</p>
+        <button class="btn" id="btnSkillImport" type="button">⬆ 选择文件导入</button><input type="file" id="skillFile" accept=".json,.md,.txt" hidden></div>
+      <div class="skillcard" style="grid-column:1/-1"><h3>已安装技能 <span class="cnt" id="skillCnt"></span></h3>
+        <div id="skillGrid" class="grid"></div></div>
+    </div>
+  </section>
+
   <section class="view" id="view-gen">
     <div class="view-head"><h2>⚡ 方案生成台 <span class="hint">勾选产品 + 硬件 + 政策 + 模板 + 格式 + 技能，一键生成申报书初稿</span></h2></div>
     <div class="gen-wrap">
@@ -162,7 +183,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
         <div class="card gcard"><h3>📝 1. 项目基本信息</h3>
           <div class="field"><label>项目名称</label><input id="fProject" placeholder="如：数字经济综合实训中心建设项目"></div>
           <div class="field"><label>客户学校</label><input id="fSchool" placeholder="如：××大学××学院"></div>
-          <div class="field"><label>专业（用于政策智能匹配）</label><input id="fMajor" placeholder="如：人力资源管理 / 数字经济 / 物流管理"></div>
+          <div class="field"><label>专业</label><input id="fMajor" placeholder="如：人力资源管理 / 数字经济 / 物流管理"></div>
           <div class="field"><label>方案类型</label><select id="fType"><option>项目申报书</option><option>建设方案</option><option>报价方案</option></select></div>
           <div class="field"><label>资金来源（可多选，“其他”勾选后可自行填写）</label>
             <div id="genFunds" style="max-height:120px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div>
@@ -179,13 +200,9 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
         </div>
         <div class="card gcard"><h3>🎨 6. 套用格式（来自文章格式库）</h3>
           <div class="field" style="margin-bottom:0"><select id="fFormat"></select></div></div>
-        <div class="card gcard"><h3>🧩 7. 技能（Skill）选择
-          <button class="btn btn-sm" id="btnSkillNew" type="button">＋ 新建</button>
-          <button class="btn btn-sm" id="btnSkillImport" type="button">⬆ 导入</button>
-          <button class="btn btn-sm" id="btnSkillMgr" type="button">⚙ 管理</button>
-          <input type="file" id="skillFile" accept=".json,.md,.txt" hidden></h3>
-          <div class="field"><select id="fSkill"></select></div>
-          <div class="llm-note" id="skillDesc" style="margin-top:0"></div></div>
+        <div class="card gcard"><h3>🧩 7. 套用技能（在「Skill 技能库」新建/导入）</h3>
+          <div class="field" style="margin-bottom:0"><select id="fSkill"></select></div>
+          <div class="llm-note" id="skillDesc" style="margin-top:6px"></div></div>
       </div>
       <div class="card gcard">
         <h3>🤖 大模型配置</h3>
