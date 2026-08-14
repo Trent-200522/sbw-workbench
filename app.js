@@ -66,7 +66,7 @@ function seed(){
   {id:"k2",seed:1,name:"建设方案撰写",desc:"侧重建设内容、实施路径与进度安排的建设方案。",prompt:"以建设方案体例撰写，突出建设内容分解、软硬件配置、实施路径与分阶段进度安排，弱化申报审批性表述。"},
   {id:"k3",seed:1,name:"报价方案撰写",desc:"侧重预算明细、价格依据与商务条款。",prompt:"以报价方案体例撰写，预算明细逐项列示（名称/型号/单位/单价/数量/金额），合计等于分项之和，并附价格依据与商务说明。"},
   {id:"k4",seed:1,name:"政策论证强化",desc:"在背景章节逐条深度引用勾选政策，强化立项依据。",prompt:"在“项目背景与政策依据”章节对每条勾选政策做“政策要点→本项目对应响应”的逐条论证，引用必须含文件名与文号，不得编造。"}],
- fundOptions:[],
+ fundOptions:["财政性资金","学校自筹","科研与教改项目经费","校企合作与经营收入","其他"],
  llm:{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""}};}
 let db=null;
 try{db=JSON.parse(localStorage.getItem(LS));}catch(e){}
@@ -77,6 +77,8 @@ if(!Array.isArray(db.hardware)||!db.hardware.length||(db.hardware[0]&&db.hardwar
 if(!Array.isArray(db.formats)||!db.formats.length)db.formats=seed().formats;
 if(!Array.isArray(db.skills)||!db.skills.length)db.skills=seed().skills;
 if(!Array.isArray(db.fundOptions))db.fundOptions=[];
+/* 兼容旧数据：补齐预置资金来源选项（用户自增项保留在后） */
+(()=>{let ch=false;for(const o of seed().fundOptions){if(!db.fundOptions.includes(o)){db.fundOptions.splice(db.fundOptions.includes("其他")?db.fundOptions.indexOf("其他"):db.fundOptions.length,0,o);ch=true;}}if(db.fundOptions.includes("其他")&&db.fundOptions.indexOf("其他")!==db.fundOptions.length-1){db.fundOptions=db.fundOptions.filter(x=>x!=="其他").concat("其他");ch=true;}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 /* 兼容旧数据：预置产品的类别同步为最新种子值（用户自建产品不动） */
 (()=>{const sp=seed().products;let ch=false;db.products.forEach(p=>{if(!p.seed)return;const s=sp.find(x=>x.name===p.name);if(s&&p.cat!==s.cat){p.cat=s.cat;ch=true;}});if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 const PROVIDERS={deepseek:{base:"https://api.deepseek.com",model:"deepseek-chat"},qwen:{base:"https://dashscope.aliyuncs.com/compatible-mode/v1",model:"qwen-plus"},doubao:{base:"https://ark.cn-beijing.volces.com/api/v3",model:"doubao-1-5-pro-32k-250115"},custom:{base:"",model:""}};
@@ -195,7 +197,7 @@ function autoMatchProducts(){
 }
 function renderGen(){
  $("#fTemplates").innerHTML=db.proposals.map(p=>`<label class="chk"><input type="checkbox" class="gtpl" value="${p.id}"><span class="n">${esc(p.title)}</span><span class="m">${esc(p.type)}</span></label>`).join("")||`<div style="color:#6b7280">方案文库为空，可不用模板。</div>`;
- $("#genFunds").innerHTML=db.fundOptions.length?db.fundOptions.map(o=>`<label class="chk"><input type="checkbox" class="gfund" value="${esc(o)}"><span class="n">${esc(o)}</span></label>`).join(""):`<div style="color:#6b7280;font-size:12px">暂无选项，请在下方输入添加（如：中央财政专项 / 省级财政 / 学校自筹 / 企业配套）。</div>`;
+ $("#genFunds").innerHTML=db.fundOptions.map(o=>`<label class="chk"><input type="checkbox" class="gfund" value="${esc(o)}"><span class="n">${esc(o)}</span></label>`).join("");syncFundOther();
  $("#genProducts").innerHTML=db.products.map(p=>`<label class="chk"><input type="checkbox" class="gp" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.cat)} · ${esc(p.price)}</span></label>`).join("")||`<div style="color:#6b7280">产品库为空，请先到「产品资料库」新增。</div>`;
  $("#genHardware").innerHTML=db.hardware.map(p=>`<label class="chk"><input type="checkbox" class="ghw" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.model)} · ${esc(p.amount)}万</span></label>`).join("")||`<div style="color:#6b7280">硬件库为空，请先到「硬件库」新增。</div>`;
  $("#genPolicies").innerHTML=db.policies.map(p=>`<label class="chk"><input type="checkbox" class="gpol" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.org)} · ${esc(p.date)}</span></label>`).join("")||`<div style="color:#6b7280">政策库为空，请先到「政策资料库」新增。</div>`;
@@ -381,6 +383,7 @@ $("#skillFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;
  else{const t=await f.text();db.skills.push({id:uid(),name:f.name.replace(/\.[^.]+$/,""),desc:"外部导入技能",prompt:t});}
  persist();renderGen();toast("技能已导入");}catch(err){alert("导入失败："+err.message);}e.target.value="";};
 $("#fSkill").onchange=syncSkillDesc;
+function syncFundOther(){const on=$$(".gfund").some(c=>c.checked&&c.value==="其他");$("#fundOther").style.display=on?"block":"none";}
 $("#btnFundAdd").onclick=()=>{const v=$("#fundNew").value.trim();if(!v)return;if(db.fundOptions.includes(v)){toast("选项已存在");return;}db.fundOptions.push(v);persist();$("#fundNew").value="";renderGen();};
 const KIND={product:"products",hardware:"hardware",proposal:"proposals",policy:"policies",format:"formats",skill:"skills"};
 document.addEventListener("click",e=>{
@@ -401,6 +404,7 @@ document.addEventListener("click",e=>{
 document.addEventListener("change",e=>{
  if(e.target.classList.contains("gpol"))polUser.set(e.target.value,e.target.checked);
  else if(e.target.classList.contains("gp")){prodUser.set(e.target.value,e.target.checked);autoMatchPolicies();}
+ else if(e.target.classList.contains("gfund"))syncFundOther();
 });
 $("#fMajor").addEventListener("input",()=>{autoMatchProducts();autoMatchPolicies();});
 $("#btnPolMatch").onclick=()=>{polUser.clear();prodUser.clear();autoMatchProducts();autoMatchPolicies();toast("已按专业重新智能匹配产品与政策");};
@@ -499,7 +503,7 @@ function gatherGen(){
   prods:$$(".gp").filter(c=>c.checked).map(c=>db.products.find(p=>p.id===c.value)).filter(Boolean),
   hw:$$(".ghw").filter(c=>c.checked).map(c=>db.hardware.find(p=>p.id===c.value)).filter(Boolean),
   pols:$$(".gpol").filter(c=>c.checked).map(c=>db.policies.find(p=>p.id===c.value)).filter(Boolean),
-  funds:$$(".gfund").filter(c=>c.checked).map(c=>c.value),
+  funds:$$(".gfund").filter(c=>c.checked).map(c=>c.value==="其他"?(($("#fundOther").value.trim()?"其他（"+$("#fundOther").value.trim()+"）":"其他")):c.value),
   words:{total:parseInt($("#fWordsTotal").value,10)||0,chapter:parseInt($("#fWordsChapter").value,10)||0},
   fmt:db.formats.find(f=>f.id===$("#fFormat").value)||null,
   skill:db.skills.find(k=>k.id===$("#fSkill").value)||null};
