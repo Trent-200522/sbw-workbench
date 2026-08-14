@@ -67,7 +67,7 @@ function seed(){
   {id:"k3",seed:1,name:"报价方案撰写",desc:"侧重预算明细、价格依据与商务条款。",prompt:"以报价方案体例撰写，预算明细逐项列示（名称/型号/单位/单价/数量/金额），合计等于分项之和，并附价格依据与商务说明。"},
   {id:"k4",seed:1,name:"政策论证强化",desc:"在背景章节逐条深度引用勾选政策，强化立项依据。",prompt:"在“项目背景与政策依据”章节对每条勾选政策做“政策要点→本项目对应响应”的逐条论证，引用必须含文件名与文号，不得编造。"},
  {id:"k5",seed:1,name:"去 AI 味润色",desc:"降低生成文本的 AI 感，更像人工撰写的正式文稿。",prompt:"全文须降低 AI 痕迹，模拟资深方案撰写人员的真实笔触：①删除或改写“综上所述、值得注意的是、首先…其次…最后、总而言之、不难发现、赋能、助力、打造、构建、旨在、具有重要意义、发挥着重要作用”等高频套话；②不堆砌排比句与对仗短语，同一段内不重复使用同一句式；③少用空洞形容词与连续破折号、感叹号，论证用具体事实、数据与政策依据展开；④句子长短交错、自然衔接，允许朴实的过渡；⑤不得因润色而删减章节、要点与预算数据，结构与内容必须完整保留。"}],
- fundOptions:["财政性资金","学校自筹","科研与教改项目经费","校企合作与经营收入","其他"],
+ fundOptions:["科研与教改项目经费","校企合作与经营收入","其他"],
  llm:{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""}};}
 let db=null;
 try{db=JSON.parse(localStorage.getItem(LS));}catch(e){}
@@ -81,7 +81,7 @@ if(!Array.isArray(db.fundOptions))db.fundOptions=[];
 /* 兼容旧数据：补齐预置资金来源选项（用户自增项保留在后） */
 (()=>{let ch=false;for(const o of seed().fundOptions){if(!db.fundOptions.includes(o)){db.fundOptions.splice(db.fundOptions.includes("其他")?db.fundOptions.indexOf("其他"):db.fundOptions.length,0,o);ch=true;}}if(db.fundOptions.includes("其他")&&db.fundOptions.indexOf("其他")!==db.fundOptions.length-1){db.fundOptions=db.fundOptions.filter(x=>x!=="其他").concat("其他");ch=true;}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 /* 兼容旧数据：移除已废弃的历史预置资金来源选项 */
-(()=>{const HIST=["财政性资金"];const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!HIST.includes(x));if(db.fundOptions.length!==n)localStorage.setItem(LS,JSON.stringify(db));})();
+(()=>{const HIST=["财政性资金","学校自筹"];const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!HIST.includes(x));if(db.fundOptions.length!==n)localStorage.setItem(LS,JSON.stringify(db));})();
 /* 兼容旧数据：预置技能按名补齐（含新增的“去 AI 味润色”） */
 (()=>{let ch=false;for(const k of seed().skills){if(!db.skills.some(x=>x.name===k.name)){db.skills.push({id:uid(),name:k.name,desc:k.desc,prompt:k.prompt,seed:1});ch=true;}}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 /* 兼容旧数据：预置产品的类别同步为最新种子值（用户自建产品不动） */
@@ -198,7 +198,7 @@ function autoMatchProducts(){
  const major=($("#fMajor")?$("#fMajor").value:"").trim();
  if(!major)return; // 专业为空时不动已有勾选
  const cats=majorCats(major);
- cbs.forEach(cb=>{const p=db.products.find(x=>x.id===cb.value);if(!p)return;cb.checked=prodUser.has(p.id)?prodUser.get(p.id):cats.has(p.cat);});
+ cbs.forEach(cb=>{const p=db.products.find(x=>x.id===cb.value);if(!p)return;cb.checked=prodUser.has(p.id)?prodUser.get(p.id):String(p.cat||"").split("、").some(c=>cats.has(c));});
 }
 function renderGen(){
  $("#fTemplates").innerHTML=db.proposals.map(p=>`<label class="chk"><input type="checkbox" class="gtpl" value="${p.id}"><span class="n">${esc(p.title)}</span><span class="m">${esc(p.type)}</span></label>`).join("")||`<div style="color:#6b7280">方案文库为空，可不用模板。</div>`;
@@ -207,44 +207,51 @@ function renderGen(){
  $("#genHardware").innerHTML=db.hardware.map(p=>`<label class="chk"><input type="checkbox" class="ghw" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.model)} · ${esc(p.amount)}万</span></label>`).join("")||`<div style="color:#6b7280">硬件库为空，请先到「硬件库」新增。</div>`;
  $("#genPolicies").innerHTML=db.policies.map(p=>`<label class="chk"><input type="checkbox" class="gpol" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.org)} · ${esc(p.date)}</span></label>`).join("")||`<div style="color:#6b7280">政策库为空，请先到「政策资料库」新增。</div>`;
  const curF=$("#fFormat").value;$("#fFormat").innerHTML=`<option value="">不套用（默认样式）</option>`+db.formats.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join("");if(curF)$("#fFormat").value=curF;
- const curK=$("#fSkill").value;$("#fSkill").innerHTML=db.skills.map(k=>`<option value="${k.id}">${esc(k.name)}</option>`).join("")||`<option value="">（无技能）</option>`;if(curK)$("#fSkill").value=curK;
+ const curK=$$(".gskill:checked").map(c=>c.value);
+ $("#genSkills").innerHTML=db.skills.map(k=>`<label class="chk"><input type="checkbox" class="gskill" value="${k.id}" ${curK.includes(k.id)?"checked":""}><span class="n">${esc(k.name)}</span><span class="m">${esc(k.desc||"")}</span></label>`).join("")||`<div style="color:#6b7280">技能库为空，请到「🧩 Skill 技能库」新建或导入。</div>`;
  syncSkillDesc();
  autoMatchProducts();
  autoMatchPolicies();
 }
-function syncSkillDesc(){const k=db.skills.find(x=>x.id===$("#fSkill").value);$("#skillDesc").textContent=k?`${k.desc||""}（技能提示词将注入生成指令）`:"暂无技能，可新建或导入。";}
-function syncLlmUi(){$("#llmProvider").value=db.llm.provider||"deepseek";$("#llmBase").value=db.llm.baseUrl||"";$("#llmModel").value=db.llm.model||"";$("#llmKey").value=db.llm.key||"";}
+function syncSkillDesc(){const ks=$$(".gskill:checked").map(c=>db.skills.find(x=>x.id===c.value)).filter(Boolean);$("#skillDesc").textContent=ks.length?`已选 ${ks.length} 项技能：${ks.map(k=>k.name).join("、")}（提示词将注入生成指令）`:"未勾选技能，可到「Skill 技能库」新建或导入。";}
+function syncLlmUi(){$("#llmProvider").value=db.llm.provider||"deepseek";$("#llmBase").value=db.llm.baseUrl||"";$("#llmModel").value=db.llm.model||"";$("#llmKey").value=db.llm.key||"";syncModelList();}
+const MODEL_HINTS={deepseek:["deepseek-chat（对话模型，性价比高）","deepseek-reasoner（深度推理）"],qwen:["qwen-plus（均衡推荐）","qwen-turbo（快速）","qwen-max（最强）","qwen-long（长文本）"],doubao:["doubao-1-5-pro-32k（推荐）","doubao-1-5-lite-32k（快速）","doubao-seed-1-6-250615"],custom:[]};
+function syncModelList(){$("#modelList").innerHTML=(MODEL_HINTS[db.llm.provider]||[]).map(m=>`<option value="${m.split("（")[0]}">${m}</option>`).join("");}
 function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();}
 
 /* ---------- 弹窗与表单 ---------- */
 function openModal(html){$("#modalBox").innerHTML=html;$("#mask").hidden=false;}
 function closeModal(){$("#mask").hidden=true;}
 $("#mask").addEventListener("click",e=>{if(e.target.id==="mask")closeModal();});
-async function parseFile(f){if(/\.docx$/i.test(f.name)){if(!window.mammoth)throw new Error("mammoth 未加载（需联网）");return{html:(await mammoth.convertToHtml({arrayBuffer:await f.arrayBuffer()})).value,text:(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value};}const t=await f.text();return{html:esc(t).replace(/\r?\n/g,"<br>"),text:t};}
+async function parseFile(f){if(/\.docx$/i.test(f.name)){if(!window.mammoth)throw new Error("mammoth 未加载（需联网）");return{html:(await mammoth.convertToHtml({arrayBuffer:await f.arrayBuffer()})).value,text:(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value};}
+ if(/\.pdf$/i.test(f.name)){if(!window.pdfjsLib)throw new Error("PDF 解析组件未加载（需联网）");pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let text="";for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const c=await pg.getTextContent();text+=c.items.map(it=>it.str).join("")+"\n";}return{html:esc(text).replace(/\r?\n/g,"<br>"),text};}
+ if(/\.(xlsx|xls|csv)$/i.test(f.name)){if(!window.XLSX)throw new Error("Excel 解析组件未加载（需联网）");const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const text=wb.SheetNames.map(n=>"【工作表："+n+"】\n"+XLSX.utils.sheet_to_txt(wb.Sheets[n])).join("\n");return{html:esc(text).replace(/\r?\n/g,"<br>"),text};}
+ const t=await f.text();return{html:esc(t).replace(/\r?\n/g,"<br>"),text:t};}
 function bindFileRich(btnId,inputId,rteId){$("#"+btnId).onclick=()=>$("#"+inputId).click();
  $("#"+inputId).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const r=await parseFile(f);$("#"+rteId).innerHTML+=r.html;toast("文件内容已导入（保留表格等原格式）");}catch(err){alert("解析失败："+err.message);}e.target.value="";};}
 function bindFile(btnId,inputId,taId){$("#"+btnId).onclick=()=>$("#"+inputId).click();
  $("#"+inputId).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const r=await parseFile(f);const ta=$("#"+taId);ta.value=(ta.value?ta.value+"\n":"")+r.text;toast("文件内容已填入");}catch(err){alert("解析失败："+err.message);}e.target.value="";};}
 function libForm(id){
  const p=id?db.products.find(x=>x.id===id):{name:"",cat:"",price:"",params:"",points:""};
- const customCat=p.cat&&!CATS.includes(p.cat);
+ const catSel=new Set(String(p.cat||"").split("、").filter(Boolean));
+ const otherCats=[...catSel].filter(c=>!CATS.includes(c));
  const paramsHtml=/<[a-z][\s\S]*>/i.test(p.params)?p.params:esc(p.params).replace(/\r?\n/g,"<br>");
  openModal(`<h3>${id?"编辑":"新增"}产品</h3>
  <div class="field"><label>产品名称 *</label><input id="mName" value="${esc(p.name)}"></div>
- <div class="field"><label>领域/类别</label><select id="mCat">${CATS.map(c=>`<option ${p.cat===c?"selected":""}>${c}</option>`).join("")}<option value="__other" ${customCat?"selected":""}>其他</option></select><input id="mCatCustom" placeholder="请输入类别" value="${customCat?esc(p.cat):""}" style="${customCat?"":"display:none;"}margin-top:6px"></div>
+ <div class="field"><label>领域/类别（可多选）</label><div class="chklist">${CATS.map(c=>`<label class="chk"><input type="checkbox" class="mcat" value="${c}" ${catSel.has(c)?"checked":""}><span class="n">${c}</span></label>`).join("")}<label class="chk"><input type="checkbox" id="mCatOther" ${otherCats.length?"checked":""}><span class="n">其他</span></label></div><input id="mCatCustom" placeholder="自定义类别，多个用、分隔" value="${esc(otherCats.join("、"))}" style="${otherCats.length?"":"display:none;"}margin-top:6px"></div>
  <div class="field"><label>参考报价</label><input id="mPrice" value="${esc(p.price)}" placeholder="如：28万/套"></div>
  <div class="field"><label>核心参数（20000 字以内，上传 Word 保留表格原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 txt/md/docx 导入</button><input type="file" id="mFile1" accept=".txt,.md,.docx" hidden></label><div class="rte" id="mParams" contenteditable="true">${paramsHtml}</div><div style="font-size:11px;color:#6b7280;margin-top:4px">当前 <span id="mCnt">0</span> / 20000 字</div></div>
  <div class="field"><label>卖点　<button class="btn btn-sm" type="button" id="mUp2">📎 上传 txt/md/docx 填入</button><input type="file" id="mFile2" accept=".txt,.md,.docx" hidden></label><textarea id="mPoints">${esc(p.points)}</textarea></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  const cnt=()=>{$("#mCnt").textContent=$("#mParams").innerText.length;};cnt();
  $("#mParams").addEventListener("input",cnt);
- $("#mCat").onchange=e=>{$("#mCatCustom").style.display=e.target.value==="__other"?"":"none";};
+ $("#mCatOther").onchange=e=>{$("#mCatCustom").style.display=e.target.checked?"":"none";};
  bindFileRich("mUp1","mFile1","mParams");bindFile("mUp2","mFile2","mPoints");
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写名称");return;}
   const rte=$("#mParams");if(rte.innerText.length>20000){alert("核心参数超过 20000 字，请精简");return;}
-  let cat=$("#mCat").value;if(cat==="__other")cat=$("#mCatCustom").value.trim()||"其他";
-  const data={name,cat,price:$("#mPrice").value.trim(),params:rte.innerHTML,points:$("#mPoints").value.trim()};
+  const cats=$$(".mcat").filter(c=>c.checked).map(c=>c.value);if($("#mCatOther").checked){const cv=$("#mCatCustom").value.trim();cats.push(...(cv?cv.split(/[、,，]/).map(s=>s.trim()).filter(Boolean):["其他"]));}
+  const data={name,cat:cats.join("、")||"其他",price:$("#mPrice").value.trim(),params:rte.innerHTML,points:$("#mPoints").value.trim()};
   if(id)Object.assign(p,data);else db.products.push({id:uid(),...data});
   persist();closeModal();renderAll();toast("已保存（外部卡片自动提炼 50 字摘要）");};
 }
@@ -413,7 +420,6 @@ $("#skillFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;
  try{if(/\.json$/i.test(f.name)){const d=JSON.parse(await f.text());if(!d||!d.name||!d.prompt)throw new Error("JSON 需含 name 与 prompt 字段");db.skills.push({id:uid(),name:d.name,desc:d.desc||"",prompt:d.prompt});}
  else{const t=await f.text();db.skills.push({id:uid(),name:f.name.replace(/\.[^.]+$/,""),desc:"外部导入技能",prompt:t});}
  persist();renderGen();renderSkillHub();toast("技能已导入");}catch(err){alert("导入失败："+err.message);}e.target.value="";};
-$("#fSkill").onchange=syncSkillDesc;
 function syncFundOther(){const on=$$(".gfund").some(c=>c.checked&&c.value==="其他");$("#fundOther").style.display=on?"block":"none";}
 const KIND={product:"products",hardware:"hardware",proposal:"proposals",policy:"policies",format:"formats",skill:"skills"};
 document.addEventListener("click",e=>{
@@ -435,6 +441,7 @@ document.addEventListener("change",e=>{
  if(e.target.classList.contains("gpol"))polUser.set(e.target.value,e.target.checked);
  else if(e.target.classList.contains("gp")){prodUser.set(e.target.value,e.target.checked);autoMatchPolicies();}
  else if(e.target.classList.contains("gfund"))syncFundOther();
+ else if(e.target.classList.contains("gskill"))syncSkillDesc();
 });
 $("#fMajor").addEventListener("input",()=>{autoMatchProducts();autoMatchPolicies();});
 $("#btnPolMatch").onclick=()=>{polUser.clear();prodUser.clear();autoMatchProducts();autoMatchPolicies();toast("已按专业重新智能匹配产品与政策");};
@@ -451,23 +458,43 @@ $("#llmProvider").onchange=e=>{db.llm.provider=e.target.value;const p=PROVIDERS[
 $("#llmBase").onchange=e=>{db.llm.baseUrl=e.target.value.trim();persist();};
 $("#llmModel").onchange=e=>{db.llm.model=e.target.value.trim();persist();};
 $("#llmKey").onchange=e=>{db.llm.key=e.target.value.trim();persist();};
+/* 检测模型：调用服务商 /models 接口，确认实际配置的模型与可用模型清单 */
+$("#btnTestModel").onclick=async()=>{
+ const btn=$("#btnTestModel");btn.disabled=true;btn.textContent="⏳ 检测中…";
+ const base=(db.llm.baseUrl||"").replace(/\/+$/,"");
+ const model=(db.llm.model||"").trim();
+ try{
+  if(!base)throw new Error("请先填写 API 接口地址");
+  const res=await fetch(base+"/models",{headers:{"Authorization":"Bearer "+(db.llm.key||"")}});
+  if(!res.ok)throw new Error(`HTTP ${res.status}：接口不可达或 Key 无效（${(await res.text().catch(()=>"" )).slice(0,120)}）`);
+  const j=await res.json();const ids=(j.data||[]).map(m=>m.id).filter(Boolean).sort();
+  if(model&&ids.includes(model)){openModal(`<h3>✅ 模型检测成功</h3><p style="margin-bottom:8px">您当前配置并实际调用的模型为：<b style="color:#1d4fa8">${esc(model)}</b></p><p class="hint" style="margin-bottom:8px">该模型名已在服务商返回的可用模型清单中核验存在。模型版本以「模型名称」输入框为准，文件名/备注不影响实际调用。</p><div class="rte" style="max-height:260px">该服务商共 ${ids.length} 个可用模型：<br>${ids.map(esc).join("<br>")}</div><div class="acts"><button class="btn btn-primary" id="mOk">关闭</button></div>`);$("#mOk").onclick=closeModal;}
+  else if(ids.length){openModal(`<h3>⚠ 未在模型清单中找到「${esc(model)}」</h3><p class="hint" style="margin-bottom:8px">请把「模型名称」改为下方清单中的准确名称后重新检测（点击名称可自动填入）：</p><div class="rte" style="max-height:280px">${ids.map(m=>`<a href="#" data-m="${esc(m)}" style="color:#1d4fa8;display:block;margin:2px 0">${esc(m)}</a>`).join("")}</div><div class="acts"><button class="btn btn-primary" id="mOk">关闭</button></div>`);
+   $("#modalBox").querySelectorAll("a[data-m]").forEach(a=>a.onclick=e=>{e.preventDefault();$("#llmModel").value=a.dataset.m;db.llm.model=a.dataset.m;persist();toast("已填入模型名称，可再次检测");});
+   $("#mOk").onclick=closeModal;}
+  else{toast("清单为空，无法核验；将直接尝试调用当前模型名");}
+ }catch(err){alert("模型检测失败："+err.message);}
+ finally{btn.disabled=false;btn.textContent="🔍 检测模型";};
+};
 
 /* ---------- 生成：提示词 + 流式调用 + 本地模板 ---------- */
 function parseWan(s){const m=String(s||"").match(/(\d+(?:\.\d+)?)\s*万/);if(m)return parseFloat(m[1]);const m2=String(s||"").replace(/[,，]/g,"").match(/(\d{4,7})(?!\d)/);return m2?Math.round(parseInt(m2,10)/10000):0;}
 function wrapName(n){return /[《〈]/.test(n)?n:"《"+n+"》";}
 function fmtSpecText(f){if(!f)return "";const L=FMT_ELS.map(([k,l])=>{const s=f.styles[k]||{};return `${l}：${s.font} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}字符 行距${s.line} 段前段后${s.space||0}pt`;});return `结构格式：\n${f.structure||""}\n各级格式：${L.join("；")}`;}
-function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,skill,fmt){
+function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,skills,fmt,tplText){
  const rules=["使用正式书面语，标题层级用“一、/（一）/1./（1）/①”五级；",
  "“建设背景与政策依据”部分必须逐条引用用户勾选的政策（含文件名与文号），不得编造任何政策文件名或文号；",
  "“建设内容”部分必须逐款融入用户勾选的产品（名称、核心参数、卖点），参数不得夸大或虚构；",
  "“预算”部分按勾选产品与硬件的参考报价列明细（硬件含型号/单位/单价/数量/金额），合计必须等于分项之和；",
- "涉及学校自身数据（现有条件、师资、学生规模等）一律用“（待补充：……）”占位，禁止虚构；",
- "正文末尾不要自行撰写“附件”章节，系统会在文末自动原样附上所选产品的核心参数；"];
+ "正文中不要自行撰写“附件”章节，系统会在文末自动附上所选产品核心参数表格；",
+ "对可推断的一般性内容（政策背景、行业趋势、常规建设思路等）可直接补全展开，尽量不留占位；但学校成立时间、专业开设年份、在校生/专业学生人数、教师人数、现有设备清单等确定性数据一律禁止编造，保留“（待核实：请学校提供×××）”字样，供用户后续确认；"];
+ if(tplText)rules.push(`用户上传了现有文件模版，内容摘录如下，请从中提取项目背景、学校情况、建设需求等可用信息并融入正文：\n"""\n${tplText.slice(0,5000)}\n"""`);
+ if(db.train&&db.train.style&&db.train.on)rules.push(`以下写作规范由历史方案自动训练总结而来，请严格遵守：${db.train.style.slice(0,1500)}`);
  if(words.total||words.chapter)rules.push(`字数要求：全文不少于 ${words.total} 字，且“一、/二、…”每个章节不少于 ${words.chapter} 字，论证充分展开；`);
  if(hw.length)rules.push("用户勾选了硬件配置，须在“建设内容”中单列硬件小节（设备名称/型号规格/单位/单价/数量/金额），并纳入预算明细；");
  if(funds.length)rules.push(`项目资金来源为：${funds.join("、")}；须在预算章节说明资金构成与使用管理；`);
  if(fmt)rules.push(`文档格式须符合「${fmt.name}」：${fmtSpecText(fmt).replace(/\n/g," ")}`);
- if(skill&&skill.prompt)rules.push(`技能要求（${skill.name}）：${skill.prompt}`);
+ skills.forEach(k=>{if(k&&k.prompt)rules.push(`技能要求（${k.name}）：${k.prompt}`);});
  rules.push("直接输出正文，不要输出任何解释性语言。");
  const sys=`你是高校商科实训实验室建设领域的资深方案撰写专家，服务于软件供应商浙江精创教育科技有限公司，长期为高校撰写${type}。写作要求：\n`+rules.map((r,i)=>`${i+1}. ${r}`).join("\n");
  let user=`请为以下项目撰写一份完整的${type}初稿：
@@ -525,11 +552,22 @@ function localDraft(project,school,type,prods,hw,pols,words,funds){
  L.push(appendixText(prods));
  return L.join("\n");
 }
-/* 文末附件章节：原样附上所选产品核心参数（一字不改） */
+/* 文末附件章节：所选产品核心参数按表格原样呈现 */
+function html2mdLines(html){
+ const doc=new DOMParser().parseFromString(html,"text/html");const out=[];
+ const walk=el=>{for(const n of el.children){const tag=n.tagName.toLowerCase();
+  if(tag==="table"){n.querySelectorAll("tr").forEach(tr=>{out.push("| "+[...tr.querySelectorAll("td,th")].map(c=>(c.innerText||"").trim().replace(/\s+/g," ")).join(" | ")+" |");});out.push("");}
+  else if(["p","div","li","h1","h2","h3","h4","h5","h6","blockquote","pre"].includes(tag)){if(n.querySelector("table"))walk(n);else{const t=(n.innerText||"").trim();if(t)out.push(t);}}
+  else if(["ul","ol","section","article","body"].includes(tag))walk(n);
+  else{const t=(n.innerText||"").trim();if(t)out.push(t);}}};
+ if(doc.body.children.length)walk(doc.body);else{const t=(doc.body.innerText||"").trim();if(t)out.push(...t.split(/\r?\n/));}
+ return out;
+}
+function paramsToLines(params){return /<[a-z][\s\S]*>/i.test(params)?html2mdLines(params):textOf(params).trim().split(/\r?\n/);}
 function appendixText(prods){
  if(!prods.length)return "";
  const L=["","附件"];const zh="一二三四五六七八九十";
- prods.forEach((p,i)=>{L.push(`附件${zh[i]||i+1}：${p.name}——核心参数`);const t=textOf(p.params).trim();L.push(t||"（该产品核心参数为空，请到产品资料库补充）");L.push("");});
+ prods.forEach((p,i)=>{L.push(`附件${zh[i]||i+1}：${p.name}——核心参数`);L.push("");const lines=paramsToLines(p.params).filter((l,j,a)=>l.trim()||((a[j-1]||"").trim()&&j<a.length-1));L.push(...(lines.length?lines:["（该产品核心参数为空，请到产品资料库补充）"]));L.push("");});
  return "\n"+L.join("\n");
 }
 function gatherGen(){
@@ -545,14 +583,15 @@ function gatherGen(){
   funds:$$(".gfund").filter(c=>c.checked).map(c=>c.value==="其他"?(($("#fundOther").value.trim()?"其他（"+$("#fundOther").value.trim()+"）":"其他")):c.value),
   words:{total:parseInt($("#fWordsTotal").value,10)||0,chapter:parseInt($("#fWordsChapter").value,10)||0},
   fmt:db.formats.find(f=>f.id===$("#fFormat").value)||null,
-  skill:db.skills.find(k=>k.id===$("#fSkill").value)||null};
+  skills:$$(".gskill:checked").map(c=>db.skills.find(k=>k.id===c.value)).filter(Boolean),
+  tplText:tplFiles.map(f=>f.text).join("\n\n")};
 }
 $("#btnGen").onclick=async()=>{
  const g=gatherGen();const ta=$("#genResult");
  if(!db.llm.key){ta.value=localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds);toast("未配置 API Key，已用本地模板拼装框架");return;}
  const btn=$("#btnGen");btn.disabled=true;btn.textContent="⏳ 生成中…";ta.value="";
- try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skill,g.fmt),t=>{ta.value+=t;ta.scrollTop=ta.scrollHeight;});
-  ta.value+=appendixText(g.prods);toast("生成完成（文末已附产品核心参数）");}
+ try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText),t=>{ta.value+=t;ta.scrollTop=ta.scrollHeight;});
+  ta.value+=appendixText(g.prods);updateChecklist();toast("生成完成（文末已附产品核心参数表格）");}
  catch(err){ta.value+=(ta.value?"\n\n":"")+"【生成失败】"+err.message+"\n请检查 API Key / 接口地址 / 模型名称；或清空 Key 后使用本地模板拼装。";}
  finally{btn.disabled=false;btn.textContent="⚡ 生成初稿";}
 };
@@ -617,4 +656,68 @@ $("#btnWord").onclick=()=>{const text=$("#genResult").value;if(!text.trim()){ale
  const blob=new Blob(["\ufeff",html],{type:"application/msword"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title+".doc";a.click();toast(fmt?`已导出 Word（套用格式：${fmt.name}）`:"已导出 Word");};
 
+/* ---------- 现有文件模版上传（自动补充项目基本信息） ---------- */
+let tplFiles=[];
+function renderTplFiles(){$("#tplFiles").innerHTML=tplFiles.map((f,i)=>`<span class="chip">📄 ${esc(f.name)}（${f.text.length}字）<button data-tplrm="${i}">✕</button></span>`).join("");}
+$("#tplFiles").addEventListener("click",e=>{const b=e.target.closest("button[data-tplrm]");if(b){tplFiles.splice(+b.dataset.tplrm,1);renderTplFiles();}});
+function autofillFromTpl(t){
+ const pn=t.match(/项目名称\s*[:：]\s*([^\n\r]{4,60})/);if(pn)$("#fProject").value=pn[1].trim();
+ else{const ls=t.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);if(ls.length)$("#fProject").value=ls[0].replace(/^[#\s]+/,"").slice(0,60);}
+ const m=t.match(/([\u4e00-\u9fa5A-Za-z]{1,12})(大学|学院|学校|技师学院)/);
+ if(m){let n=m[1];for(;;){const mm=n.match(/^(的|于|在|为|给|由|与|和|面向|委托|联合|项目|及|或|本|该|此|我|拟|将|对)/);if(!mm||n.length-mm[1].length<2)break;n=n.slice(mm[1].length);}$("#fSchool").value=n+m[2];}
+ for(const c of CATS){if(t.includes(c)){$("#fMajor").value=c;break;}}
+ if(/建设方案/.test(t))$("#fType").value="建设方案";else if(/报价|投标/.test(t))$("#fType").value="报价方案";
+ $$(".gfund").forEach(cb=>{if(cb.value!=="其他"&&t.includes(cb.value))cb.checked=true;});syncFundOther();
+ autoMatchProducts();autoMatchPolicies();
+}
+$("#btnTplUp").onclick=()=>$("#tplFile").click();
+$("#tplFile").onchange=async e=>{const files=[...e.target.files];if(!files.length)return;
+ for(const f of files){try{const r=await parseFile(f);tplFiles.push({name:f.name,text:r.text.slice(0,20000)});}catch(err){alert("解析失败："+f.name+"："+err.message);}}
+ e.target.value="";renderTplFiles();autofillFromTpl(tplFiles.map(x=>x.text).join("\n"));toast("已检索文件并自动补充项目基本信息，可自行调整");};
+
+/* ---------- 修订对话框待确认清单 / 导出对话 Word ---------- */
+function updateChecklist(){
+ const el=$("#chatChecklist");if(!el)return;
+ const lines=($("#genResult").value||"").split(/\r?\n/).filter(l=>/待补充|待核实/.test(l)).map(l=>l.trim()).slice(0,20);
+ el.innerHTML=lines.length?`<div style="font-size:12px;color:#374151;margin-bottom:6px"><b>📋 待确认清单</b>（大模型标注/自动补写的部分，点击可快速下达指示） <button class="btn btn-sm" id="btnCkRefresh" type="button">🔄 刷新</button></div>`+lines.map((l,i)=>`<div class="chip" style="cursor:pointer;max-width:100%" data-ck="${i}">${esc(l.length>60?l.slice(0,60)+"…":l)}</div>`).join("")+`<div style="height:6px"></div>`:"";
+ el.querySelectorAll("[data-ck]").forEach(c=>c.onclick=()=>{$("#chatInput").value="请处理以下内容："+lines[+c.dataset.ck]+"　（如是确定性数据请标注待学校提供，不要编造）";$("#chatInput").focus();});
+ const rb=$("#btnCkRefresh");if(rb)rb.onclick=updateChecklist;
+}
+$("#btnChatWord").onclick=()=>{
+ const bubs=$$("#chatLog .bub");if(!bubs.length){alert("暂无对话内容");return;}
+ const html=bubs.map(b=>`<p style="margin:6px 0"><b>${b.classList.contains("u")?"我":"AI 助手"}：</b>${esc(b.textContent).replace(/\r?\n/g,"<br>")}</p>`).join("");
+ const doc=`<html><head><meta charset="utf-8"><title>修订对话记录</title></head><body><h2>修订对话记录（${todayStr()}）</h2>${html}</body></html>`;
+ const blob=new Blob(["\ufeff",doc],{type:"application/msword"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="修订对话记录_"+todayStr()+".doc";a.click();toast("对话已导出 Word");};
+
+/* ---------- 方案文库：定时自动训练 ---------- */
+db.train=db.train||{on:false,time:"09:00",freq:"daily",lastRun:0,style:"",logs:[]};
+function trainModal(){
+ const t=db.train;
+ openModal(`<h3>🕒 定时自动训练（方案文库 → 大模型）</h3>
+ <p class="hint" style="margin-bottom:8px">原理：定时把方案文库的历史方案交给大模型，自动总结《写作规范与风格要点》并在每次生成时注入指令，让输出越来越贴近您的体例与规范。（调用 API 的模型无法真正改权重，此为该场景下的标准做法）</p>
+ <label class="chk"><input type="checkbox" id="trOn" ${t.on?"checked":""}><span class="n">启用定时训练（页面需保持打开）</span></label>
+ <div class="field"><label>训练时间点</label><input id="trTime" type="time" value="${t.time||"09:00"}"></div>
+ <div class="field"><label>频率</label><select id="trFreq"><option value="hourly" ${t.freq==="hourly"?"selected":""}>每小时</option><option value="daily" ${t.freq==="daily"?"selected":""}>每天</option><option value="weekly" ${t.freq==="weekly"?"selected":""}>每周</option></select></div>
+ <div class="field"><label>已学写作规范（可手动微调）</label><textarea id="trStyle" style="min-height:100px">${esc(t.style||"")}</textarea></div>
+ <div class="field"><label>训练记录</label><div class="hint" style="max-height:90px;overflow:auto">${(t.logs||[]).slice(-5).map(l=>esc(l)).join("<br>")||"暂无"}</div></div>
+ <div class="acts"><button class="btn" id="trNow">⚡ 立即训练一次</button><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
+ $("#mCancel").onclick=closeModal;
+ $("#mOk").onclick=()=>{db.train.on=$("#trOn").checked;db.train.time=$("#trTime").value;db.train.freq=$("#trFreq").value;db.train.style=$("#trStyle").value.trim();persist();closeModal();toast("训练设置已保存");};
+ $("#trNow").onclick=async()=>{$("#trNow").disabled=true;$("#trNow").textContent="⏳ 训练中…";try{await runTrain();toast("训练完成，写作规范已更新");closeModal();}catch(err){alert("训练失败："+err.message);$("#trNow").disabled=false;$("#trNow").textContent="⚡ 立即训练一次";}};
+}
+async function runTrain(){
+ if(!db.llm.key)throw new Error("请先在大模型配置中填写 API Key");
+ const docs=db.proposals.slice(-6).map(p=>`《${p.title}》（${p.type}）要点：${p.keypoints||""}\n正文摘录：${textOf(p.content).slice(0,1200)}`).join("\n\n");
+ if(!db.proposals.length)throw new Error("方案文库为空，请先添加历史方案再训练");
+ let out="";await streamChat([{role:"system",content:"你是方案写作教练。请从用户的历史方案中总结《写作规范与风格要点》：章节结构习惯、政策引用方式、预算表述方式、语言风格、格式规范，输出不超过 800 字、逐条列出，直接输出内容。"},{role:"user",content:docs}],t=>{out+=t;});
+ db.train.style=out.trim();db.train.lastRun=Date.now();db.train.logs.push(todayStr()+" "+new Date().toTimeString().slice(0,5)+" 训练完成（样本 "+db.proposals.length+" 份）");db.train.logs=db.train.logs.slice(-20);persist();
+}
+setInterval(()=>{const t=db.train;if(!t||!t.on||!db.llm.key)return;const now=new Date();const hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+ const gap=t.freq==="hourly"?36e5:t.freq==="weekly"?7*864e5:864e5;
+ if(Date.now()-(t.lastRun||0)<gap)return;
+ if(t.freq==="hourly"||(t.time||"09:00")===hm){runTrain().then(()=>toast("🕒 自动训练完成，写作规范已更新")).catch(()=>{});}},60000);
+
 renderAll();
+$("#btnTrainPanel").onclick=trainModal;
+renderTplFiles();
+updateChecklist();
