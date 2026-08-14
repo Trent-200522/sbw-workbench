@@ -23,7 +23,6 @@ header .sub{color:#6b7280;font-size:12px;margin-top:2px}
 .btn-sm{padding:6px 10px;font-size:12px}
 main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .card{background:#fff;border:1px solid #e3e8ef;border-radius:12px;padding:18px}
-/* 待办 */
 .todos{background:#f4f7fc;border:1px solid #dbe4f0;margin-bottom:22px}
 .todos h2{font-size:15px;color:#1d4fa8;display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .todos h2 .cnt{background:#1d4fa8;color:#fff;border-radius:10px;font-size:12px;padding:1px 8px}
@@ -35,7 +34,6 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .badge{border-radius:6px;font-size:11px;padding:2px 8px;color:#fff;background:#2563eb;margin-left:8px;vertical-align:2px}
 .badge.red{background:#dc2626}
 .badge.gray{background:#9ca3af}
-/* 页签 */
 .tabs{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap}
 .tabs button{background:#fff;border:1px solid #d5dce6;border-radius:10px;padding:10px 18px;font-size:14px;color:#374151;display:inline-flex;gap:8px;align-items:center}
 .tabs button.on{background:#1d4fa8;border-color:#1d4fa8;color:#fff}
@@ -56,8 +54,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .item .row{font-size:13px;color:#374151;line-height:1.6}
 .item .row .k{color:#6b7280}
 .item .row b{color:#111827}
-.item .acts{border-top:1px dashed #d8dee8;margin-top:auto;padding-top:10px;display:flex;gap:8px}
-/* 生成台 */
+.item .acts{border-top:1px dashed #d8dee8;margin-top:auto;padding-top:10px;display:flex;gap:8px;flex-wrap:wrap}
 .gen-wrap{display:grid;grid-template-columns:minmax(380px,5fr) 6fr;gap:18px;align-items:start}
 @media(max-width:960px){.gen-wrap{grid-template-columns:1fr}}
 .gen-left{display:flex;flex-direction:column;gap:16px}
@@ -71,26 +68,38 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .chk input{width:16px;height:16px;accent-color:#1d4fa8;flex:none}
 .chk .n{font-weight:600}
 .chk .m{color:#6b7280;font-size:12px}
-#genResult{width:100%;min-height:430px;border:1px solid #d5dce6;border-radius:10px;padding:14px;font-size:13px;line-height:1.8;font-family:inherit;resize:vertical;background:#fbfcfe}
+#genResult{width:100%;min-height:380px;border:1px solid #d5dce6;border-radius:10px;padding:14px;font-size:13px;line-height:1.8;font-family:inherit;resize:vertical;background:#fbfcfe}
 .gen-acts{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
 .llm-note{font-size:12px;color:#6b7280;background:#f4f7fc;border-radius:8px;padding:8px 10px;margin-top:8px;line-height:1.6}
-/* 底部 */
 .foot{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:26px}
 @media(max-width:860px){.foot{grid-template-columns:1fr}}
 .foot h3{font-size:14px;color:#1d4fa8;margin-bottom:10px}
 .foot p{font-size:12px;color:#6b7280;line-height:1.7;margin-bottom:10px}
-/* 弹窗 */
 #mask{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:50;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow:auto}
 #mask[hidden]{display:none}
-.modal{background:#fff;border-radius:14px;max-width:640px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal{background:#fff;border-radius:14px;max-width:760px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
 .modal h3{font-size:16px;margin-bottom:16px;color:#111827}
 .modal .acts{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.rte{min-height:140px;max-height:280px;overflow:auto;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px;background:#fff;line-height:1.7}
+.rte table{border-collapse:collapse;margin:6px 0;width:100%}
+.rte td,.rte th{border:1px solid #9ca3af;padding:4px 8px;font-size:12px}
+.fmtrow{display:grid;grid-template-columns:86px repeat(6,minmax(64px,1fr)) 30px;gap:5px;align-items:center;margin-bottom:6px}
+.fmtrow select,.fmtrow input{border:1px solid #d5dce6;border-radius:6px;padding:5px 4px;font-size:12px;background:#fff;width:100%}
+.fmtrow b{font-size:12px;color:#374151}
+.fmt-head{display:grid;grid-template-columns:86px repeat(6,minmax(64px,1fr)) 30px;gap:5px;margin-bottom:6px}
+.fmt-head span{font-size:11px;color:#6b7280}
+.chatlog{border:1px solid #e3e8ef;border-radius:10px;background:#fbfcfe;min-height:120px;max-height:300px;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.bub{max-width:88%;border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.bub.u{align-self:flex-end;background:#1d4fa8;color:#fff}
+.bub.a{align-self:flex-start;background:#e8eefb;color:#1f2937;border:1px solid #c9d8f2}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#e3ecfa;color:#1d4fa8;border-radius:6px;padding:3px 8px;font-size:12px;margin:0 6px 6px 0}
+.chip button{border:none;background:none;color:#1d4fa8;cursor:pointer;font-size:12px}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm-10 9.5 10 5 10-5V14l-10 5-10-5v-2.5zm0 5 10 5 10-5V19l-10 5-10-5v-2.5z"/></svg></div>
-  <div><h1>商科实训 · 申报方案工作台</h1><div class="sub">产品 · 方案 · 政策，一键成稿</div></div>
+  <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm-10 9.5 10 5 10-5v-2.5l-10 5-10-5v-2.5zm0 5 10 5 10-5V19l-10 5-10-5v-2.5z"/></svg></div>
+  <div><h1>商科实训 · 申报方案工作台</h1><div class="sub">产品 · 硬件 · 方案 · 政策 · 格式，一键成稿</div></div>
   <div class="spacer"></div>
   <button class="btn" id="btnExport">⬇ 导出备份</button>
   <button class="btn" id="btnImportTop">⬆ 导入恢复</button>
@@ -107,6 +116,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
     <button data-tab="hardware">🖥 硬件库</button>
     <button data-tab="proposals">📄 方案文库</button>
     <button data-tab="policies">🚩 政策资料库</button>
+    <button data-tab="formats">🎨 格式库</button>
     <button data-tab="gen">⚡ 方案生成台</button>
   </nav>
 
@@ -118,8 +128,8 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
   </section>
 
   <section class="view" id="view-hardware">
-    <div class="view-head"><h2>🖥 硬件库 <span class="hint">暂为产品资料库副本，可逐条编辑替换为真实硬件</span> <span class="cnt" id="hwCnt"></span></h2>
-      <input type="text" id="hwSearch" placeholder="🔍 搜索硬件名称/类别">
+    <div class="view-head"><h2>🖥 硬件库 <span class="hint">设备名称 / 型号规格 / 单位 / 单价 / 数量 / 金额</span> <span class="cnt" id="hwCnt"></span></h2>
+      <input type="text" id="hwSearch" placeholder="🔍 搜索设备名称/型号">
       <button class="btn btn-primary" id="btnAddHw">＋ 新增硬件</button></div>
     <div class="grid" id="hwGrid"></div>
   </section>
@@ -138,8 +148,14 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
     <div class="grid" id="polGrid"></div>
   </section>
 
+  <section class="view" id="view-formats">
+    <div class="view-head"><h2>🎨 格式库 <span class="hint">定义标题层级结构与各级字体字号段落格式，生成与导出 Word 时套用</span> <span class="cnt" id="fmtCnt"></span></h2>
+      <button class="btn btn-primary" id="btnAddFmt">＋ 新增格式</button></div>
+    <div class="grid" id="fmtGrid"></div>
+  </section>
+
   <section class="view" id="view-gen">
-    <div class="view-head"><h2>⚡ 方案生成台 <span class="hint">勾选产品 + 硬件 + 政策 + 参考模板，一键生成申报书初稿框架</span></h2></div>
+    <div class="view-head"><h2>⚡ 方案生成台 <span class="hint">勾选产品 + 硬件 + 政策 + 模板 + 格式 + 技能，一键生成申报书初稿</span></h2></div>
     <div class="gen-wrap">
       <div class="gen-left">
         <div class="card gcard"><h3>📝 1. 项目基本信息</h3>
@@ -147,7 +163,10 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <div class="field"><label>客户学校</label><input id="fSchool" placeholder="如：××大学××学院"></div>
           <div class="field"><label>专业（用于政策智能匹配）</label><input id="fMajor" placeholder="如：人力资源管理 / 数字经济 / 物流管理"></div>
           <div class="field"><label>方案类型</label><select id="fType"><option>项目申报书</option><option>建设方案</option><option>报价方案</option></select></div>
-          <div class="field" style="margin-bottom:0"><label>参考模板（可多选，来自方案文库）</label><div id="fTemplates" style="max-height:170px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div></div>
+          <div class="field"><label>资金来源（可多选，选项可自增）</label>
+            <div id="genFunds" style="max-height:120px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div>
+            <div style="display:flex;gap:8px;margin-top:8px"><input id="fundNew" placeholder="输入新资金来源选项，如：中央财政专项" style="flex:1;border:1px solid #d5dce6;border-radius:8px;padding:7px 10px;font-size:12px"><button class="btn btn-sm" id="btnFundAdd" type="button">＋ 添加选项</button></div></div>
+          <div class="field" style="margin-bottom:0"><label>参考模板（可多选，来自方案文库）</label><div id="fTemplates" style="max-height:150px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div></div>
         </div>
         <div class="card gcard"><h3>📦 2. 勾选参与建设的产品</h3><div id="genProducts"></div></div>
         <div class="card gcard"><h3>🖥 3. 勾选硬件配置（可选）</h3><div id="genHardware"></div></div>
@@ -156,6 +175,15 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <div class="field"><label>整体最低字数</label><input id="fWordsTotal" type="number" min="0" step="500" value="8000"></div>
           <div class="field" style="margin-bottom:0"><label>每章节最低字数</label><input id="fWordsChapter" type="number" min="0" step="100" value="500"></div>
         </div>
+        <div class="card gcard"><h3>🎨 6. 套用格式（来自格式库）</h3>
+          <div class="field" style="margin-bottom:0"><select id="fFormat"></select></div></div>
+        <div class="card gcard"><h3>🧩 7. 技能（Skill）选择
+          <button class="btn btn-sm" id="btnSkillNew" type="button">＋ 新建</button>
+          <button class="btn btn-sm" id="btnSkillImport" type="button">⬆ 导入</button>
+          <button class="btn btn-sm" id="btnSkillMgr" type="button">⚙ 管理</button>
+          <input type="file" id="skillFile" accept=".json,.md,.txt" hidden></h3>
+          <div class="field"><select id="fSkill"></select></div>
+          <div class="llm-note" id="skillDesc" style="margin-top:0"></div></div>
       </div>
       <div class="card gcard">
         <h3>🤖 大模型配置</h3>
@@ -173,6 +201,14 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <button class="btn btn-primary" id="btnCopyAll">⧉ 复制全文</button>
           <button class="btn" id="btnSaveProp">💾 存入方案文库</button>
           <button class="btn" id="btnWord">📑 导出 Word</button>
+        </div>
+        <h3 style="margin-top:18px">💬 修订对话框 <span style="font-size:12px;color:#6b7280;font-weight:normal">可上传附件，调用已接大模型思考回答，辅助进一步修正</span></h3>
+        <div class="chatlog" id="chatLog"></div>
+        <div id="chatAttach" style="margin-top:8px"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn" id="btnChatUp" type="button">📎 附件</button><input type="file" id="chatFile" accept=".txt,.md,.docx" hidden>
+          <input id="chatInput" placeholder="如：把第三章扩充到 1500 字 / 预算合计对不上，帮我检查" style="flex:1;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px">
+          <button class="btn btn-primary" id="btnChatSend" type="button">发送 ➤</button>
         </div>
       </div>
     </div>
