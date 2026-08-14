@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>商科实训 · 申报方案工作台</title>
 <script src="https://unpkg.com/mammoth@1.7.2/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#eef1f6;color:#1f2937;font-size:14px}
@@ -92,6 +94,8 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .skillcard h3{margin:0 0 10px;font-size:15px}
 .skillhead{background:linear-gradient(135deg,#16336b,#2f5cc4);border-radius:12px;color:#fff;padding:16px 20px;margin-bottom:16px}
 .skillhead b{font-size:18px}
+.trainpanel{background:#eef4ff;border:1px solid #c9d8f2;border-radius:10px;padding:12px 14px;margin-top:14px}
+.chklist{max-height:150px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff}
 .chatbox{border:1px solid #e3e8ef;border-radius:10px;background:#fbfcfe;overflow:hidden}
 .chatlog{min-height:140px;max-height:260px;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
 .bub{max-width:88%;border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
@@ -142,6 +146,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 
   <section class="view" id="view-proposals">
     <div class="view-head"><h2>📄 方案文库 <span class="hint">历史申报书 / 建设方案，写新方案时作模板参考</span> <span class="cnt" id="propCnt"></span></h2>
+      <button class="btn" id="btnTrainPanel" type="button">🕒 定时自动训练</button>
       <input type="text" id="propSearch" placeholder="🔍 搜索标题/客户/要点">
       <button class="btn btn-primary" id="btnAddProp">＋ 新增方案</button></div>
     <div class="grid" id="propGrid"></div>
@@ -180,6 +185,9 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
     <div class="view-head"><h2>⚡ 方案生成台 <span class="hint">勾选产品 + 硬件 + 政策 + 模板 + 格式 + 技能，一键生成申报书初稿</span></h2></div>
     <div class="gen-wrap">
       <div class="gen-left">
+        <div class="card gcard"><h3>📂 0. 现有文件模版（可选）<span style="font-size:12px;color:#6b7280;font-weight:normal">上传后自动检索并补充项目基本信息，可再调整</span></h3>
+          <button class="btn" id="btnTplUp" type="button">⬆ 上传文件（Word / PDF / Excel / txt）</button><input type="file" id="tplFile" accept=".docx,.doc,.pdf,.xlsx,.xls,.csv,.txt,.md" multiple hidden>
+          <div id="tplFiles" style="margin-top:8px"></div></div>
         <div class="card gcard"><h3>📝 1. 项目基本信息</h3>
           <div class="field"><label>项目名称</label><input id="fProject" placeholder="如：数字经济综合实训中心建设项目"></div>
           <div class="field"><label>客户学校</label><input id="fSchool" placeholder="如：××大学××学院"></div>
@@ -199,8 +207,8 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
         </div>
         <div class="card gcard"><h3>🎨 6. 套用格式（来自文章格式库）</h3>
           <div class="field" style="margin-bottom:0"><select id="fFormat"></select></div></div>
-        <div class="card gcard"><h3>🧩 7. 套用技能（在「Skill 技能库」新建/导入）</h3>
-          <div class="field" style="margin-bottom:0"><select id="fSkill"></select></div>
+        <div class="card gcard"><h3>🧩 7. 套用技能（可多选，在「Skill 技能库」新建/导入）</h3>
+          <div id="genSkills" class="chklist"></div>
           <div class="llm-note" id="skillDesc" style="margin-top:6px"></div></div>
       </div>
       <div class="card gcard">
@@ -209,7 +217,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <option value="deepseek">DeepSeek</option><option value="qwen">通义千问（阿里）</option>
           <option value="doubao">豆包（字节）</option><option value="custom">自定义（OpenAI 兼容接口）</option></select></div>
         <div class="field"><label>API 接口地址（baseUrl）</label><input id="llmBase" placeholder="https://api.deepseek.com"></div>
-        <div class="field"><label>模型名称</label><input id="llmModel" placeholder="deepseek-chat"></div>
+        <div class="field"><label>模型名称（决定实际调用的模型，点击输入框可见常用型号）</label><div style="display:flex;gap:8px"><input id="llmModel" placeholder="deepseek-chat" list="modelList" style="flex:1"><button class="btn" id="btnTestModel" type="button" title="调用服务商 /models 接口核验您配置的模型是否存在">🔍 检测模型</button></div><datalist id="modelList"></datalist></div>
         <div class="field"><label>API Key</label><input id="llmKey" type="password" placeholder="sk-... （仅保存在本机浏览器）"></div>
         <div class="llm-note">未填 API Key 时，将使用本地模板拼装出初稿框架（不联网）；填写后调用大模型流式生成完整初稿。Key 只存 localStorage，不会上传任何第三方服务器。</div>
         <button class="btn btn-primary" id="btnGen" style="width:100%;justify-content:center;padding:11px">⚡ 生成初稿</button>
@@ -220,12 +228,14 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <button class="btn" id="btnSaveProp">💾 存入方案文库</button>
           <button class="btn" id="btnWord">📑 导出 Word</button>
         </div>
-        <h3 style="margin-top:18px">💬 修订对话框 <span style="font-size:12px;color:#6b7280;font-weight:normal">直接在框内输入，可传附件，调用已接大模型思考回答</span></h3>
+        <h3 style="margin-top:18px">💬 修订对话框 <span style="font-size:12px;color:#6b7280;font-weight:normal">直接在框内输入，可传 Word/PDF/Excel 等附件</span>
+          <button class="btn btn-sm" id="btnChatWord" type="button">📑 导出对话 Word</button></h3>
         <div class="chatbox">
+          <div id="chatChecklist" style="padding:8px 10px 0"></div>
           <div class="chatlog" id="chatLog"></div>
           <div id="chatAttach" style="padding:6px 10px 0"></div>
           <div style="display:flex;gap:8px;padding:8px;border-top:1px solid #e3e8ef;background:#fff">
-            <button class="btn" id="btnChatUp" type="button" title="上传附件">📎</button><input type="file" id="chatFile" accept=".txt,.md,.docx" hidden>
+            <button class="btn" id="btnChatUp" type="button" title="上传附件">📎</button><input type="file" id="chatFile" accept=".txt,.md,.docx,.pdf,.xlsx,.xls,.csv" hidden>
             <input id="chatInput" placeholder="直接输入修改意见或问题，Enter 发送" style="flex:1;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px">
             <button class="btn btn-primary" id="btnChatSend" type="button">发送 ➤</button>
           </div>
