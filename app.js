@@ -65,7 +65,8 @@ function seed(){
   {id:"k1",seed:1,name:"申报书撰写专家",desc:"按标准九章结构撰写完整项目申报书，正式书面语，预算自洽。",prompt:"以高校项目申报书的标准九章结构（项目背景与政策依据/学校现状与需求分析/建设目标与思路/建设内容与产品方案/资金预算与用途/组织实施与进度/预期效益/保障措施）撰写，语言正式、论证充分。"},
   {id:"k2",seed:1,name:"建设方案撰写",desc:"侧重建设内容、实施路径与进度安排的建设方案。",prompt:"以建设方案体例撰写，突出建设内容分解、软硬件配置、实施路径与分阶段进度安排，弱化申报审批性表述。"},
   {id:"k3",seed:1,name:"报价方案撰写",desc:"侧重预算明细、价格依据与商务条款。",prompt:"以报价方案体例撰写，预算明细逐项列示（名称/型号/单位/单价/数量/金额），合计等于分项之和，并附价格依据与商务说明。"},
-  {id:"k4",seed:1,name:"政策论证强化",desc:"在背景章节逐条深度引用勾选政策，强化立项依据。",prompt:"在“项目背景与政策依据”章节对每条勾选政策做“政策要点→本项目对应响应”的逐条论证，引用必须含文件名与文号，不得编造。"}],
+  {id:"k4",seed:1,name:"政策论证强化",desc:"在背景章节逐条深度引用勾选政策，强化立项依据。",prompt:"在“项目背景与政策依据”章节对每条勾选政策做“政策要点→本项目对应响应”的逐条论证，引用必须含文件名与文号，不得编造。"},
+ {id:"k5",seed:1,name:"去 AI 味润色",desc:"降低生成文本的 AI 感，更像人工撰写的正式文稿。",prompt:"全文须降低 AI 痕迹，模拟资深方案撰写人员的真实笔触：①删除或改写“综上所述、值得注意的是、首先…其次…最后、总而言之、不难发现、赋能、助力、打造、构建、旨在、具有重要意义、发挥着重要作用”等高频套话；②不堆砌排比句与对仗短语，同一段内不重复使用同一句式；③少用空洞形容词与连续破折号、感叹号，论证用具体事实、数据与政策依据展开；④句子长短交错、自然衔接，允许朴实的过渡；⑤不得因润色而删减章节、要点与预算数据，结构与内容必须完整保留。"}],
  fundOptions:["财政性资金","学校自筹","科研与教改项目经费","校企合作与经营收入","其他"],
  llm:{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""}};}
 let db=null;
@@ -79,6 +80,10 @@ if(!Array.isArray(db.skills)||!db.skills.length)db.skills=seed().skills;
 if(!Array.isArray(db.fundOptions))db.fundOptions=[];
 /* 兼容旧数据：补齐预置资金来源选项（用户自增项保留在后） */
 (()=>{let ch=false;for(const o of seed().fundOptions){if(!db.fundOptions.includes(o)){db.fundOptions.splice(db.fundOptions.includes("其他")?db.fundOptions.indexOf("其他"):db.fundOptions.length,0,o);ch=true;}}if(db.fundOptions.includes("其他")&&db.fundOptions.indexOf("其他")!==db.fundOptions.length-1){db.fundOptions=db.fundOptions.filter(x=>x!=="其他").concat("其他");ch=true;}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
+/* 兼容旧数据：移除已废弃的历史预置资金来源选项 */
+(()=>{const HIST=["财政性资金"];const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!HIST.includes(x));if(db.fundOptions.length!==n)localStorage.setItem(LS,JSON.stringify(db));})();
+/* 兼容旧数据：预置技能按名补齐（含新增的“去 AI 味润色”） */
+(()=>{let ch=false;for(const k of seed().skills){if(!db.skills.some(x=>x.name===k.name)){db.skills.push({id:uid(),name:k.name,desc:k.desc,prompt:k.prompt,seed:1});ch=true;}}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 /* 兼容旧数据：预置产品的类别同步为最新种子值（用户自建产品不动） */
 (()=>{const sp=seed().products;let ch=false;db.products.forEach(p=>{if(!p.seed)return;const s=sp.find(x=>x.name===p.name);if(s&&p.cat!==s.cat){p.cat=s.cat;ch=true;}});if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 const PROVIDERS={deepseek:{base:"https://api.deepseek.com",model:"deepseek-chat"},qwen:{base:"https://dashscope.aliyuncs.com/compatible-mode/v1",model:"qwen-plus"},doubao:{base:"https://ark.cn-beijing.volces.com/api/v3",model:"doubao-1-5-pro-32k-250115"},custom:{base:"",model:""}};
@@ -209,7 +214,7 @@ function renderGen(){
 }
 function syncSkillDesc(){const k=db.skills.find(x=>x.id===$("#fSkill").value);$("#skillDesc").textContent=k?`${k.desc||""}（技能提示词将注入生成指令）`:"暂无技能，可新建或导入。";}
 function syncLlmUi(){$("#llmProvider").value=db.llm.provider||"deepseek";$("#llmBase").value=db.llm.baseUrl||"";$("#llmModel").value=db.llm.model||"";$("#llmKey").value=db.llm.key||"";}
-function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderGen();syncLlmUi();}
+function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();}
 
 /* ---------- 弹窗与表单 ---------- */
 function openModal(html){$("#modalBox").innerHTML=html;$("#mask").hidden=false;}
@@ -311,7 +316,7 @@ function skillForm(id){
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写技能名称");return;}
   const data={name,desc:$("#mDesc").value.trim(),prompt:$("#mPrompt").value.trim()};
   if(id)Object.assign(k,data);else db.skills.push({id:uid(),...data});
-  persist();closeModal();renderGen();toast("已保存");};
+  persist();closeModal();renderGen();renderSkillHub();toast("已保存");};
 }
 function skillMgr(){
  const extra=EXTRA_SKILLS.map((k,i)=>db.skills.some(s=>s.name===k.name)?"":`<div class="chk"><span class="n" style="flex:1">${k.name}<span class="m" style="margin-left:8px">${k.desc}</span></span><button class="btn btn-sm" data-install="${i}">安装</button></div>`).join("");
@@ -322,7 +327,7 @@ function skillMgr(){
  <button class="btn btn-sm btn-danger" data-act="del" data-kind="skill" data-id="${k.id}">🗑</button></div>`).join("")||EMPTY}
  <h3 style="margin-top:14px">📥 推荐技能（移植自其他软件，一键安装）</h3>
  ${extra||`<p class="hint">推荐技能已全部安装 ✔</p>`}
- <p class="hint" style="margin-top:8px">也可自行导入：生成台 ⬆ 导入，支持 .json（含 name/prompt）、.md、.txt（整文作为提示词）。</p>
+ <p class="hint" style="margin-top:8px">也可到顶部「🧩 Skill 技能库」页签新建/导入技能：支持 .json（含 name/prompt）、.md、.txt（整文作为提示词）。</p>
  <div class="acts"><button class="btn btn-primary" id="mOk">完成</button></div>`);
  $("#mOk").onclick=closeModal;
 }
@@ -376,12 +381,20 @@ function todoForm(){
 $$(".tabs button").forEach(b=>b.onclick=()=>{$$(".tabs button").forEach(x=>x.classList.toggle("on",x===b));$$(".view").forEach(v=>v.classList.toggle("on",v.id==="view-"+b.dataset.tab));});
 $("#prodSearch").oninput=renderProducts;$("#hwSearch").oninput=renderHardware;$("#propSearch").oninput=renderProposals;$("#polSearch").oninput=renderPolicies;
 $("#btnAddProduct").onclick=()=>libForm();$("#btnAddHw").onclick=()=>hwForm();$("#btnAddProp").onclick=()=>proposalForm();$("#btnAddPol").onclick=()=>policyForm();$("#btnAddTodo").onclick=todoForm;$("#btnAddFmt").onclick=()=>formatForm();
-$("#btnSkillNew").onclick=()=>skillForm();$("#btnSkillMgr").onclick=skillMgr;
+/* ---------- Skill 技能库页 ---------- */
+function renderSkillHub(){
+ if(!$("#skillGrid"))return;
+ $("#skillCnt").textContent=db.skills.length?"（"+db.skills.length+"）":"";
+ $("#skillGrid").innerHTML=db.skills.map(k=>`<div class="card item" style="margin:0"><b>${esc(k.name)}</b>${k.seed?" <span class='m'>预置</span>":""}<span class="m">${esc(k.desc||"")}</span><div style="font-size:12px;color:#4b5563;margin:8px 0;line-height:1.7;max-height:72px;overflow:auto">${esc(k.prompt||"").slice(0,200)}${(k.prompt||"").length>200?"…":""}</div><div class="acts" style="justify-content:flex-end"><button class="btn btn-sm" data-act="edit" data-kind="skill" data-id="${k.id}">✎ 编辑</button><button class="btn btn-sm btn-danger" data-act="del" data-kind="skill" data-id="${k.id}">🗑 删除</button></div></div>`).join("")||EMPTY;
+}
+$("#btnSkillCreate").onclick=()=>{const name=$("#skName").value.trim();if(!name){alert("请填写技能名称");return;}
+ db.skills.push({id:uid(),name,desc:$("#skDesc").value.trim(),prompt:$("#skPrompt").value.trim()});persist();
+ $("#skName").value="";$("#skDesc").value="";$("#skPrompt").value="";renderSkillHub();renderGen();toast("技能已保存，可在方案生成台第 7 步套用");};
 $("#btnSkillImport").onclick=()=>$("#skillFile").click();
 $("#skillFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;
  try{if(/\.json$/i.test(f.name)){const d=JSON.parse(await f.text());if(!d||!d.name||!d.prompt)throw new Error("JSON 需含 name 与 prompt 字段");db.skills.push({id:uid(),name:d.name,desc:d.desc||"",prompt:d.prompt});}
  else{const t=await f.text();db.skills.push({id:uid(),name:f.name.replace(/\.[^.]+$/,""),desc:"外部导入技能",prompt:t});}
- persist();renderGen();toast("技能已导入");}catch(err){alert("导入失败："+err.message);}e.target.value="";};
+ persist();renderGen();renderSkillHub();toast("技能已导入");}catch(err){alert("导入失败："+err.message);}e.target.value="";};
 $("#fSkill").onchange=syncSkillDesc;
 function syncFundOther(){const on=$$(".gfund").some(c=>c.checked&&c.value==="其他");$("#fundOther").style.display=on?"block":"none";}
 $("#btnFundAdd").onclick=()=>{const v=$("#fundNew").value.trim();if(!v)return;if(db.fundOptions.includes(v)){toast("选项已存在");return;}db.fundOptions.push(v);persist();$("#fundNew").value="";renderGen();};
