@@ -88,7 +88,8 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .fmtrow b{font-size:12px;color:#374151}
 .fmt-head{display:grid;grid-template-columns:86px repeat(6,minmax(64px,1fr)) 30px;gap:5px;margin-bottom:6px}
 .fmt-head span{font-size:11px;color:#6b7280}
-.chatlog{border:1px solid #e3e8ef;border-radius:10px;background:#fbfcfe;min-height:120px;max-height:300px;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
+.chatbox{border:1px solid #e3e8ef;border-radius:10px;background:#fbfcfe;overflow:hidden}
+.chatlog{min-height:140px;max-height:260px;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
 .bub{max-width:88%;border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
 .bub.u{align-self:flex-end;background:#1d4fa8;color:#fff}
 .bub.a{align-self:flex-start;background:#e8eefb;color:#1f2937;border:1px solid #c9d8f2}
@@ -116,7 +117,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
     <button data-tab="hardware">🖥 硬件库</button>
     <button data-tab="proposals">📄 方案文库</button>
     <button data-tab="policies">🚩 政策资料库</button>
-    <button data-tab="formats">🎨 格式库</button>
+    <button data-tab="formats">🎨 文章格式库</button>
     <button data-tab="gen">⚡ 方案生成台</button>
   </nav>
 
@@ -149,7 +150,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
   </section>
 
   <section class="view" id="view-formats">
-    <div class="view-head"><h2>🎨 格式库 <span class="hint">定义标题层级结构与各级字体字号段落格式，生成与导出 Word 时套用</span> <span class="cnt" id="fmtCnt"></span></h2>
+    <div class="view-head"><h2>🎨 文章格式库 <span class="hint">定义标题层级结构与各级字体字号段落格式，生成与导出 Word 时套用</span> <span class="cnt" id="fmtCnt"></span></h2>
       <button class="btn btn-primary" id="btnAddFmt">＋ 新增格式</button></div>
     <div class="grid" id="fmtGrid"></div>
   </section>
@@ -175,7 +176,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <div class="field"><label>整体最低字数</label><input id="fWordsTotal" type="number" min="0" step="500" value="8000"></div>
           <div class="field" style="margin-bottom:0"><label>每章节最低字数</label><input id="fWordsChapter" type="number" min="0" step="100" value="500"></div>
         </div>
-        <div class="card gcard"><h3>🎨 6. 套用格式（来自格式库）</h3>
+        <div class="card gcard"><h3>🎨 6. 套用格式（来自文章格式库）</h3>
           <div class="field" style="margin-bottom:0"><select id="fFormat"></select></div></div>
         <div class="card gcard"><h3>🧩 7. 技能（Skill）选择
           <button class="btn btn-sm" id="btnSkillNew" type="button">＋ 新建</button>
@@ -202,13 +203,15 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <button class="btn" id="btnSaveProp">💾 存入方案文库</button>
           <button class="btn" id="btnWord">📑 导出 Word</button>
         </div>
-        <h3 style="margin-top:18px">💬 修订对话框 <span style="font-size:12px;color:#6b7280;font-weight:normal">可上传附件，调用已接大模型思考回答，辅助进一步修正</span></h3>
-        <div class="chatlog" id="chatLog"></div>
-        <div id="chatAttach" style="margin-top:8px"></div>
-        <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn" id="btnChatUp" type="button">📎 附件</button><input type="file" id="chatFile" accept=".txt,.md,.docx" hidden>
-          <input id="chatInput" placeholder="如：把第三章扩充到 1500 字 / 预算合计对不上，帮我检查" style="flex:1;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px">
-          <button class="btn btn-primary" id="btnChatSend" type="button">发送 ➤</button>
+        <h3 style="margin-top:18px">💬 修订对话框 <span style="font-size:12px;color:#6b7280;font-weight:normal">直接在框内输入，可传附件，调用已接大模型思考回答</span></h3>
+        <div class="chatbox">
+          <div class="chatlog" id="chatLog"></div>
+          <div id="chatAttach" style="padding:6px 10px 0"></div>
+          <div style="display:flex;gap:8px;padding:8px;border-top:1px solid #e3e8ef;background:#fff">
+            <button class="btn" id="btnChatUp" type="button" title="上传附件">📎</button><input type="file" id="chatFile" accept=".txt,.md,.docx" hidden>
+            <input id="chatInput" placeholder="直接输入修改意见或问题，Enter 发送" style="flex:1;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px">
+            <button class="btn btn-primary" id="btnChatSend" type="button">发送 ➤</button>
+          </div>
         </div>
       </div>
     </div>
