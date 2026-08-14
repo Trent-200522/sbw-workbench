@@ -134,7 +134,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
   </section>
 
   <section class="view" id="view-hardware">
-    <div class="view-head"><h2>🖥 硬件库 <span class="hint">设备名称 / 型号规格 / 单位 / 单价 / 数量 / 金额</span> <span class="cnt" id="hwCnt"></span></h2>
+    <div class="view-head"><h2>🖥 硬件库 <span class="cnt" id="hwCnt"></span></h2>
       <input type="text" id="hwSearch" placeholder="🔍 搜索设备名称/型号">
       <button class="btn btn-primary" id="btnAddHw">＋ 新增硬件</button></div>
     <div class="grid" id="hwGrid"></div>
@@ -187,8 +187,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <div class="field"><label>方案类型</label><select id="fType"><option>项目申报书</option><option>建设方案</option><option>报价方案</option></select></div>
           <div class="field"><label>资金来源（可多选，“其他”勾选后可自行填写）</label>
             <div id="genFunds" style="max-height:120px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div>
-            <input id="fundOther" placeholder="请填写其他资金来源，如：专项基金 / 捐赠收入" style="display:none;margin-top:8px;width:100%;border:1px solid #d5dce6;border-radius:8px;padding:7px 10px;font-size:12px">
-            <div style="display:flex;gap:8px;margin-top:8px"><input id="fundNew" placeholder="自定义新增一个资金来源选项" style="flex:1;border:1px solid #d5dce6;border-radius:8px;padding:7px 10px;font-size:12px"><button class="btn btn-sm" id="btnFundAdd" type="button">＋ 添加选项</button></div></div>
+            <input id="fundOther" placeholder="请填写其他资金来源，如：专项基金 / 捐赠收入" style="display:none;margin-top:8px;width:100%;border:1px solid #d5dce6;border-radius:8px;padding:7px 10px;font-size:12px"></div>
           <div class="field" style="margin-bottom:0"><label>参考模板（可多选，来自方案文库）</label><div id="fTemplates" style="max-height:150px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div></div>
         </div>
         <div class="card gcard"><h3>📦 2. 勾选参与建设的产品</h3><div id="genProducts"></div></div>
