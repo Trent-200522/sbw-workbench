@@ -132,25 +132,25 @@ function renderHardware(){
 }
 function renderProposals(){
  const q=$("#propSearch").value.trim();
- const list=db.proposals.filter(p=>!q||(p.title+p.client+p.keypoints).includes(q));
+ const list=db.proposals.filter(p=>!q||(p.title+p.client+p.keypoints+textOf(p.content)).includes(q));
  $("#propCnt").textContent=`共 ${db.proposals.length} 份`;
  $("#propGrid").innerHTML=list.map(p=>`<div class="card item">
   <div class="head"><b>${esc(p.title)}</b><span class="tag ${p.type==="建设方案"?"green":""}">${esc(p.type)}</span></div>
   <div class="row"><span class="k">客户：</span><b>${esc(p.client)}</b>　<span class="k">年份：</span><b>${esc(p.year)}</b></div>
   <div class="row"><span class="k">要点：</span>${esc(p.keypoints)}</div>
-  <div class="row"><span class="k">可复用内容：</span>${esc((p.content||"").slice(0,120))}${(p.content||"").length>120?"…":""}</div>
+  <div class="row"><span class="k">可复用内容：</span>${esc(textOf(p.content).replace(/\s+/g," ").slice(0,120))}${textOf(p.content).length>120?"…":""}</div>
   <div class="acts"><button class="btn btn-sm" data-act="copy" data-id="${p.id}">⧉ 复制要点</button>
   <button class="btn btn-sm" data-act="edit" data-kind="proposal" data-id="${p.id}">✎ 编辑</button>
   <button class="btn btn-sm btn-danger" data-act="del" data-kind="proposal" data-id="${p.id}">🗑 删除</button></div></div>`).join("")||EMPTY;
 }
 function renderPolicies(){
  const q=$("#polSearch").value.trim();
- const list=db.policies.filter(p=>!q||(p.name+p.org+p.keywords+p.summary).includes(q));
+ const list=db.policies.filter(p=>!q||(p.name+p.org+p.keywords+textOf(p.summary)).includes(q));
  $("#polCnt").textContent=`共 ${db.policies.length} 条`;
  $("#polGrid").innerHTML=list.map(p=>`<div class="card item">
   <div class="head"><b>${esc(p.name)}</b><span class="tag orange">${esc(p.org)}</span></div>
   <div class="row"><span class="k">时间：</span><b>${esc(p.date)}</b>　<span class="k">关键词：</span><b>${esc(p.keywords)}</b></div>
-  <div class="row">${esc(p.summary)}</div>
+  <div class="row">${esc(sum50(p.summary))||""}</div>
   <div class="row"><span class="k">适用：</span>${esc(p.usage)}</div>
   <div class="acts"><button class="btn btn-sm" data-act="edit" data-kind="policy" data-id="${p.id}">✎ 编辑</button>
   <button class="btn btn-sm btn-danger" data-act="del" data-kind="policy" data-id="${p.id}">🗑 删除</button></div></div>`).join("")||EMPTY;
@@ -169,7 +169,7 @@ function renderFormats(){
 /* ---------- 政策智能匹配 ---------- */
 const polUser=new Map();
 const POL_KW={"工商管理":["商科","产教融合","校企合作"],"人力资源管理":["人力资源"],"市场营销":["营销","产教融合"],"物流管理":["物流","产教融合"],"数字经济":["数字经济","数字化","人工智能","AI"],"数字贸易":["数字贸易","数字经济"],"创新创业":["创新创业","创业"],"劳动与社会保障":["社会保障","劳动"],"新商科":["商科","教育现代化"],"对抗竞赛":["竞赛","以赛促学"],"大数据分析":["大数据","数字化"]};
-function polScore(p,terms){const text=p.name+p.keywords+p.summary+p.usage;let s=0;for(const t of terms){if(t&&text.includes(t))s++;}return s;}
+function polScore(p,terms){const text=p.name+p.keywords+textOf(p.summary)+p.usage;let s=0;for(const t of terms){if(t&&text.includes(t))s++;}return s;}
 function collectTerms(){
  const major=($("#fMajor")?$("#fMajor").value:"").trim();const S=new Set();
  const addK=k=>{(POL_KW[k]||[]).forEach(t=>S.add(t));};
@@ -339,12 +339,21 @@ function proposalForm(id){
  <div class="field"><label>客户学校</label><input id="mClient" value="${esc(p.client)}"></div>
  <div class="field"><label>年份</label><input id="mYear" value="${esc(p.year)}"></div>
  <div class="field"><label>要点</label><textarea id="mKeys">${esc(p.keypoints)}</textarea></div>
- <div class="field"><label>可复用内容（正文摘录）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 txt/md/docx 填入</button><input type="file" id="mFile1" accept=".txt,.md,.docx" hidden></label><textarea id="mContent" style="min-height:150px">${esc(p.content)}</textarea></div>
+ <div class="field"><label>可复用内容（正文摘录，上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 txt/md/docx（自动识别标题/类型/客户学校，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx" hidden></label><div class="rte" id="mContent" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.content)?p.content:esc(p.content).replace(/\r?\n/g,"<br>")}</div></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
- bindFile("mUp1","mFile1","mContent");
+ $("#mUp1").onclick=()=>$("#mFile1").click();
+ $("#mFile1").onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{const r=await parseFile(f);
+   const lines=r.text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+   if(lines.length){const t=lines[0].replace(/^[#\s]+/,"").slice(0,60);if(t)$("#mTitle").value=t;}
+   $("#mType").value=/建设方案/.test(r.text)?"建设方案":"项目申报书";
+   const m=r.text.match(/([\u4e00-\u9fa5A-Za-z]{1,12})(大学|学院|学校|技师学院)/);
+   if(m){let n=m[1];for(;;){const mm=n.match(/^(的|于|在|为|给|由|与|和|面向|委托|联合|项目|及|或|本|该|此|我|拟|将|对)/);if(!mm||n.length-mm[1].length<2)break;n=n.slice(mm[1].length);}$("#mClient").value=n+m[2];}
+   const y=(r.text.match(/(20\d{2})\s*年/)||[])[1];if(y)$("#mYear").value=y;
+   $("#mContent").innerHTML+=($("#mContent").innerHTML?"<br>":"")+r.html;toast("已导入并自动识别标题/类型/客户学校，可自行调整");}catch(err){alert("解析失败："+err.message);}e.target.value="";};
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const title=$("#mTitle").value.trim();if(!title){alert("请填写标题");return;}
-  const data={title,type:$("#mType").value,client:$("#mClient").value.trim(),year:$("#mYear").value.trim(),keypoints:$("#mKeys").value.trim(),content:$("#mContent").value.trim()};
+  const data={title,type:$("#mType").value,client:$("#mClient").value.trim(),year:$("#mYear").value.trim(),keypoints:$("#mKeys").value.trim(),content:$("#mContent").innerHTML.trim()};
   if(id)Object.assign(p,data);else db.proposals.push({id:uid(),...data});
   persist();closeModal();renderAll();toast("已保存");};
 }
@@ -355,13 +364,22 @@ function policyForm(id){
  <div class="field"><label>发文单位</label><input id="mOrg" value="${esc(p.org)}"></div>
  <div class="field"><label>时间</label><input id="mDate" value="${esc(p.date)}" placeholder="如：2021-12"></div>
  <div class="field"><label>关键词</label><input id="mKeys" value="${esc(p.keywords)}" placeholder="逗号分隔"></div>
- <div class="field"><label>核心要点　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 txt/md/docx 填入</button><input type="file" id="mFile1" accept=".txt,.md,.docx" hidden></label><textarea id="mSum">${esc(p.summary)}</textarea></div>
+ <div class="field"><label>正文内容（上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 txt/md/docx（自动识别名称/单位/时间/关键词，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx" hidden></label><div class="rte" id="mSum" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.summary)?p.summary:esc(p.summary).replace(/\r?\n/g,"<br>")}</div></div>
  <div class="field"><label>适用场景</label><input id="mUse" value="${esc(p.usage)}" placeholder="如：建设背景引用"></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
- bindFile("mUp1","mFile1","mSum");
+ $("#mUp1").onclick=()=>$("#mFile1").click();
+ $("#mFile1").onchange=async e=>{const f=e.target.files[0];if(!f)return;
+  try{const r=await parseFile(f);const t=r.text;
+   const lines=t.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+   if(lines.length&&!$("#mName").value.trim())$("#mName").value=lines[0].replace(/^[#\s]+/,"").slice(0,80);
+   const om=t.match(/[\u4e00-\u9fa5]{0,18}(?:人民政府|教育部|委员会|办公厅|教育厅|财政局|发展改革委|局)(?=[\s：:，。、\d]|$)/);if(om&&!$("#mOrg").value.trim())$("#mOrg").value=om[0];
+   const dm=t.match(/\d{4}\s*年\s*\d{1,2}\s*月(?:\s*\d{1,2}\s*日)?/);if(dm&&!$("#mDate").value.trim())$("#mDate").value=dm[0].replace(/\s+/g,"");
+   if(!$("#mKeys").value.trim()){const ws=lines[0].replace(/关于|印发|通知|意见|办法|方案|规划|决定|函|的/g," ").split(/[、，。\s《》（）()·]+/).filter(w=>/[\u4e00-\u9fa5]{2,}/.test(w)&&w.length<=20).map(w=>w.replace(/[^\u4e00-\u9fa5]/g,"").slice(0,8)).filter(w=>w.length>=2).slice(0,5);if(ws.length)$("#mKeys").value=ws.join("、");}
+   if(!$("#mUse").value.trim())$("#mUse").value=/职业教育|职业院校/.test(t)?"职教/实训类项目建设背景与立项依据引用":"建设背景与政策依据章节引用";
+   $("#mSum").innerHTML+=($("#mSum").innerHTML?"<br>":"")+r.html;toast("已导入正文并自动识别名称/单位/时间/关键词/适用场景，可自行调整");}catch(err){alert("解析失败："+err.message);}e.target.value="";};
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写政策名称");return;}
-  const data={name,org:$("#mOrg").value.trim(),date:$("#mDate").value.trim(),keywords:$("#mKeys").value.trim(),summary:$("#mSum").value.trim(),usage:$("#mUse").value.trim()};
+  const data={name,org:$("#mOrg").value.trim(),date:$("#mDate").value.trim(),keywords:$("#mKeys").value.trim(),summary:$("#mSum").innerHTML.trim(),usage:$("#mUse").value.trim()};
   if(id)Object.assign(p,data);else db.policies.push({id:uid(),...data});
   persist();closeModal();renderAll();toast("已保存");};
 }
@@ -397,7 +415,6 @@ $("#skillFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;
  persist();renderGen();renderSkillHub();toast("技能已导入");}catch(err){alert("导入失败："+err.message);}e.target.value="";};
 $("#fSkill").onchange=syncSkillDesc;
 function syncFundOther(){const on=$$(".gfund").some(c=>c.checked&&c.value==="其他");$("#fundOther").style.display=on?"block":"none";}
-$("#btnFundAdd").onclick=()=>{const v=$("#fundNew").value.trim();if(!v)return;if(db.fundOptions.includes(v)){toast("选项已存在");return;}db.fundOptions.push(v);persist();$("#fundNew").value="";renderGen();};
 const KIND={product:"products",hardware:"hardware",proposal:"proposals",policy:"policies",format:"formats",skill:"skills"};
 document.addEventListener("click",e=>{
  const ib=e.target.closest("button[data-install]");
@@ -444,7 +461,8 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
  "“建设背景与政策依据”部分必须逐条引用用户勾选的政策（含文件名与文号），不得编造任何政策文件名或文号；",
  "“建设内容”部分必须逐款融入用户勾选的产品（名称、核心参数、卖点），参数不得夸大或虚构；",
  "“预算”部分按勾选产品与硬件的参考报价列明细（硬件含型号/单位/单价/数量/金额），合计必须等于分项之和；",
- "涉及学校自身数据（现有条件、师资、学生规模等）一律用“（待补充：……）”占位，禁止虚构；"];
+ "涉及学校自身数据（现有条件、师资、学生规模等）一律用“（待补充：……）”占位，禁止虚构；",
+ "正文末尾不要自行撰写“附件”章节，系统会在文末自动原样附上所选产品的核心参数；"];
  if(words.total||words.chapter)rules.push(`字数要求：全文不少于 ${words.total} 字，且“一、/二、…”每个章节不少于 ${words.chapter} 字，论证充分展开；`);
  if(hw.length)rules.push("用户勾选了硬件配置，须在“建设内容”中单列硬件小节（设备名称/型号规格/单位/单价/数量/金额），并纳入预算明细；");
  if(funds.length)rules.push(`项目资金来源为：${funds.join("、")}；须在预算章节说明资金构成与使用管理；`);
@@ -504,7 +522,15 @@ function localDraft(project,school,type,prods,hw,pols,words,funds){
  L.push("");L.push("七、保障措施");
  L.push("管理机制、管理队伍、环境条件、资金筹措与政府采购合规保障。");
  if(words.total||words.chapter){L.push("");L.push(`（字数要求：整体 ≥${words.total} 字、每章节 ≥${words.chapter} 字；在 Word 中完善时请按此扩充。）`);}
+ L.push(appendixText(prods));
  return L.join("\n");
+}
+/* 文末附件章节：原样附上所选产品核心参数（一字不改） */
+function appendixText(prods){
+ if(!prods.length)return "";
+ const L=["","附件"];const zh="一二三四五六七八九十";
+ prods.forEach((p,i)=>{L.push(`附件${zh[i]||i+1}：${p.name}——核心参数`);const t=textOf(p.params).trim();L.push(t||"（该产品核心参数为空，请到产品资料库补充）");L.push("");});
+ return "\n"+L.join("\n");
 }
 function gatherGen(){
  return{
@@ -525,7 +551,8 @@ $("#btnGen").onclick=async()=>{
  const g=gatherGen();const ta=$("#genResult");
  if(!db.llm.key){ta.value=localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds);toast("未配置 API Key，已用本地模板拼装框架");return;}
  const btn=$("#btnGen");btn.disabled=true;btn.textContent="⏳ 生成中…";ta.value="";
- try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skill,g.fmt),t=>{ta.value+=t;ta.scrollTop=ta.scrollHeight;});toast("生成完成");}
+ try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skill,g.fmt),t=>{ta.value+=t;ta.scrollTop=ta.scrollHeight;});
+  ta.value+=appendixText(g.prods);toast("生成完成（文末已附产品核心参数）");}
  catch(err){ta.value+=(ta.value?"\n\n":"")+"【生成失败】"+err.message+"\n请检查 API Key / 接口地址 / 模型名称；或清空 Key 后使用本地模板拼装。";}
  finally{btn.disabled=false;btn.textContent="⚡ 生成初稿";}
 };
@@ -568,6 +595,7 @@ function md2html(text,fmt){
   if(!l.trim()){return;}
   if(idx===0&&!/^[一二三四五六七八九十]+、/.test(l)){out.push(`<h1 style="${S("h1")}text-align:center">${l}</h1>`);return;}
   if(/^([一二三四五六七八九十]+、)/.test(l))return out.push(`<h2 style="${S("h1")}">${l}</h2>`);
+  if(/^附件/.test(l))return out.push(`<h2 style="${S("h1")}">${l}</h2>`);
   if(/^（[一二三四五六七八九十]+）/.test(l))return out.push(`<h3 style="${S("h2")}">${l}</h3>`);
   if(/^（\d+）/.test(l)||/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(l))return out.push(`<h4 style="${S("h4")}">${l}</h4>`);
   if(/^\d+[\.、]/.test(l))return out.push(`<h4 style="${S("h3")}">${l}</h4>`);
