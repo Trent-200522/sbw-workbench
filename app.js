@@ -77,6 +77,8 @@ if(!Array.isArray(db.hardware)||!db.hardware.length||(db.hardware[0]&&db.hardwar
 if(!Array.isArray(db.formats)||!db.formats.length)db.formats=seed().formats;
 if(!Array.isArray(db.skills)||!db.skills.length)db.skills=seed().skills;
 if(!Array.isArray(db.fundOptions))db.fundOptions=[];
+/* 兼容旧数据：预置产品的类别同步为最新种子值（用户自建产品不动） */
+(()=>{const sp=seed().products;let ch=false;db.products.forEach(p=>{if(!p.seed)return;const s=sp.find(x=>x.name===p.name);if(s&&p.cat!==s.cat){p.cat=s.cat;ch=true;}});if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 const PROVIDERS={deepseek:{base:"https://api.deepseek.com",model:"deepseek-chat"},qwen:{base:"https://dashscope.aliyuncs.com/compatible-mode/v1",model:"qwen-plus"},doubao:{base:"https://ark.cn-beijing.volces.com/api/v3",model:"doubao-1-5-pro-32k-250115"},custom:{base:"",model:""}};
 
 /* ---------- 渲染 ---------- */
@@ -174,6 +176,23 @@ function autoMatchPolicies(){
  const rec=new Set(db.policies.filter(p=>polScore(p,terms)>0).map(p=>p.id));
  cbs.forEach(cb=>{const id=cb.value;cb.checked=polUser.has(id)?polUser.get(id):rec.has(id);});
 }
+/* ---------- 专业 → 产品智能匹配（可手动覆盖） ---------- */
+const prodUser=new Map();
+const MAJOR_SYN={"人资":"人力资源管理","人力资源":"人力资源管理","物流":"物流管理","营销":"市场营销","社会保障":"劳动与社会保障","工商":"工商管理","创业":"创新创业","电商":"数字贸易"};
+function majorCats(major){
+ const S=new Set();
+ if(!major)return S;
+ for(const c of CATS){if(c===major||c.includes(major)||major.includes(c))S.add(c);}
+ for(const k in MAJOR_SYN){if(major.includes(k))S.add(MAJOR_SYN[k]);}
+ return S;
+}
+function autoMatchProducts(){
+ const cbs=$$(".gp");if(!cbs.length)return;
+ const major=($("#fMajor")?$("#fMajor").value:"").trim();
+ if(!major)return; // 专业为空时不动已有勾选
+ const cats=majorCats(major);
+ cbs.forEach(cb=>{const p=db.products.find(x=>x.id===cb.value);if(!p)return;cb.checked=prodUser.has(p.id)?prodUser.get(p.id):cats.has(p.cat);});
+}
 function renderGen(){
  $("#fTemplates").innerHTML=db.proposals.map(p=>`<label class="chk"><input type="checkbox" class="gtpl" value="${p.id}"><span class="n">${esc(p.title)}</span><span class="m">${esc(p.type)}</span></label>`).join("")||`<div style="color:#6b7280">方案文库为空，可不用模板。</div>`;
  $("#genFunds").innerHTML=db.fundOptions.length?db.fundOptions.map(o=>`<label class="chk"><input type="checkbox" class="gfund" value="${esc(o)}"><span class="n">${esc(o)}</span></label>`).join(""):`<div style="color:#6b7280;font-size:12px">暂无选项，请在下方输入添加（如：中央财政专项 / 省级财政 / 学校自筹 / 企业配套）。</div>`;
@@ -183,6 +202,7 @@ function renderGen(){
  const curF=$("#fFormat").value;$("#fFormat").innerHTML=`<option value="">不套用（默认样式）</option>`+db.formats.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join("");if(curF)$("#fFormat").value=curF;
  const curK=$("#fSkill").value;$("#fSkill").innerHTML=db.skills.map(k=>`<option value="${k.id}">${esc(k.name)}</option>`).join("")||`<option value="">（无技能）</option>`;if(curK)$("#fSkill").value=curK;
  syncSkillDesc();
+ autoMatchProducts();
  autoMatchPolicies();
 }
 function syncSkillDesc(){const k=db.skills.find(x=>x.id===$("#fSkill").value);$("#skillDesc").textContent=k?`${k.desc||""}（技能提示词将注入生成指令）`:"暂无技能，可新建或导入。";}
@@ -266,6 +286,17 @@ function formatForm(id){
   if(id)Object.assign(f,data);else db.formats.push({id:uid(),...data});
   persist();closeModal();renderAll();toast("已保存，可在生成台套用");};
 }
+/* ---------- 推荐技能（移植自其他软件，一键安装） ---------- */
+const EXTRA_SKILLS=[
+ {name:"WPS AI · 文档排版助手",desc:"移植自 WPS AI：生成后输出 Word 排版执行清单",
+  prompt:"你是文档排版助手。用户生成方案初稿后，请根据套用的格式规范，逐条输出《Word 排版执行清单》：各级标题的字体/字号/加粗/居中设置、正文首行缩进与行距、表格样式，让用户在 Word 里按清单逐项设置即可交付。"},
+ {name:"标书合规审查专家",desc:"移植自标书审查软件：逐条核查初稿合规性",
+  prompt:"你是标书合规审查专家。请以评审视角逐条审查当前初稿：①政策引用是否带文号、文号是否真实存在；②预算合计与分项是否一致；③产品参数描述是否有过度承诺；④未提供的学校信息是否用了占位符。逐条列出问题与修改建议，不确定的明确标注不确定。"},
+ {name:"Coze 方案生成 Bot",desc:"移植自 Coze 智能体：先提纲后分章生成的工作流",
+  prompt:"你是“方案大师”Bot，按以下工作流执行：第一步先输出章节提纲（不写正文）等待用户确认；第二步用户确认后逐章生成，每章先引政策依据、再述建设内容、最后列该章预算；第三步全篇完成后输出预算汇总表。"},
+ {name:"Dify 知识库问答约束",desc:"移植自 Dify 知识库节点：只依据已给材料回答",
+  prompt:"回答时优先引用用户提供的材料（附件、已勾选的政策、产品参数）；材料中找不到依据时，明确说明“知识库中未找到”，不得自行杜撰数据或政策文号。"}
+];
 function skillForm(id){
  const k=id?db.skills.find(x=>x.id===id):{name:"",desc:"",prompt:""};
  openModal(`<h3>${id?"编辑":"新建"}技能（Skill）</h3>
@@ -281,10 +312,15 @@ function skillForm(id){
   persist();closeModal();renderGen();toast("已保存");};
 }
 function skillMgr(){
+ const extra=EXTRA_SKILLS.map((k,i)=>db.skills.some(s=>s.name===k.name)?"":`<div class="chk"><span class="n" style="flex:1">${k.name}<span class="m" style="margin-left:8px">${k.desc}</span></span><button class="btn btn-sm" data-install="${i}">安装</button></div>`).join("");
  openModal(`<h3>⚙ 技能管理</h3>
+ <p class="hint" style="margin:0 0 8px">技能=附加到生成的专业指令，生成时所选技能的提示词会一并发给大模型。</p>
  ${db.skills.map(k=>`<div class="chk"><span class="n" style="flex:1">${esc(k.name)}<span class="m" style="margin-left:8px">${esc(k.desc)}</span></span>
  <button class="btn btn-sm" data-act="edit" data-kind="skill" data-id="${k.id}">✎</button>
  <button class="btn btn-sm btn-danger" data-act="del" data-kind="skill" data-id="${k.id}">🗑</button></div>`).join("")||EMPTY}
+ <h3 style="margin-top:14px">📥 推荐技能（移植自其他软件，一键安装）</h3>
+ ${extra||`<p class="hint">推荐技能已全部安装 ✔</p>`}
+ <p class="hint" style="margin-top:8px">也可自行导入：生成台 ⬆ 导入，支持 .json（含 name/prompt）、.md、.txt（整文作为提示词）。</p>
  <div class="acts"><button class="btn btn-primary" id="mOk">完成</button></div>`);
  $("#mOk").onclick=closeModal;
 }
@@ -348,6 +384,8 @@ $("#fSkill").onchange=syncSkillDesc;
 $("#btnFundAdd").onclick=()=>{const v=$("#fundNew").value.trim();if(!v)return;if(db.fundOptions.includes(v)){toast("选项已存在");return;}db.fundOptions.push(v);persist();$("#fundNew").value="";renderGen();};
 const KIND={product:"products",hardware:"hardware",proposal:"proposals",policy:"policies",format:"formats",skill:"skills"};
 document.addEventListener("click",e=>{
+ const ib=e.target.closest("button[data-install]");
+ if(ib){const k=EXTRA_SKILLS[+ib.dataset.install];if(k){db.skills.push({id:uid(),name:k.name,desc:k.desc,prompt:k.prompt});persist();renderGen();skillMgr();toast("已安装技能："+k.name);}return;}
  const bt=e.target.closest("button[data-act]");
  if(bt){const{act,kind,id}=bt.dataset;
   if(act==="del"){if(!confirm("确定删除该条目？"))return;db[KIND[kind]]=db[KIND[kind]].filter(x=>x.id!==id);persist();renderAll();return;}
@@ -362,10 +400,10 @@ document.addEventListener("click",e=>{
 });
 document.addEventListener("change",e=>{
  if(e.target.classList.contains("gpol"))polUser.set(e.target.value,e.target.checked);
- else if(e.target.classList.contains("gp"))autoMatchPolicies();
+ else if(e.target.classList.contains("gp")){prodUser.set(e.target.value,e.target.checked);autoMatchPolicies();}
 });
-$("#fMajor").addEventListener("input",autoMatchPolicies);
-$("#btnPolMatch").onclick=()=>{polUser.clear();autoMatchPolicies();toast("已按专业与产品智能匹配政策");};
+$("#fMajor").addEventListener("input",()=>{autoMatchProducts();autoMatchPolicies();});
+$("#btnPolMatch").onclick=()=>{polUser.clear();prodUser.clear();autoMatchProducts();autoMatchPolicies();toast("已按专业重新智能匹配产品与政策");};
 /* 备份导入导出与清理 */
 function exportJson(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="申报方案工作台备份_"+todayStr()+".json";a.click();toast("已导出备份");}
 function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
