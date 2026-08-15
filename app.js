@@ -414,7 +414,7 @@ function renderSkillHub(){
 }
 $("#btnSkillCreate").onclick=()=>{const name=$("#skName").value.trim();if(!name){alert("请填写技能名称");return;}
  db.skills.push({id:uid(),name,desc:$("#skDesc").value.trim(),prompt:$("#skPrompt").value.trim()});persist();
- $("#skName").value="";$("#skDesc").value="";$("#skPrompt").value="";renderSkillHub();renderGen();toast("技能已保存，可在方案生成台第 7 步套用");};
+ $("#skName").value="";$("#skDesc").value="";$("#skPrompt").value="";renderSkillHub();renderGen();toast("技能已保存，可在方案生成台第 8 步套用");};
 $("#btnSkillImport").onclick=()=>$("#skillFile").click();
 $("#skillFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;
  try{if(/\.json$/i.test(f.name)){const d=JSON.parse(await f.text());if(!d||!d.name||!d.prompt)throw new Error("JSON 需含 name 与 prompt 字段");db.skills.push({id:uid(),name:d.name,desc:d.desc||"",prompt:d.prompt});}
@@ -490,7 +490,7 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
  "对可推断的一般性内容（政策背景、行业趋势、常规建设思路等）可直接补全展开，尽量不留占位；但学校成立时间、专业开设年份、在校生/专业学生人数、教师人数、现有设备清单等确定性数据一律禁止编造，保留“（待核实：请学校提供×××）”字样，供用户后续确认；"];
  if(tplText)rules.push(`用户上传了现有文件模版，内容摘录如下，请从中提取项目背景、学校情况、建设需求等可用信息并融入正文：\n"""\n${tplText.slice(0,5000)}\n"""`);
  if(db.train&&db.train.style&&db.train.on)rules.push(`以下写作规范由历史方案自动训练总结而来，请严格遵守：${db.train.style.slice(0,1500)}`);
- if(words.total||words.chapter)rules.push(`字数要求：全文不少于 ${words.total} 字，且“一、/二、…”每个章节不少于 ${words.chapter} 字，论证充分展开；`);
+ if(words.total||words.chapter||words.max)rules.push(`字数要求：全文不少于 ${words.total} 字${words.max?`，且全文不超过 ${words.max} 字（请在该上限内合理分配各章节篇幅）`:""}，且“一、/二、…”每个章节不少于 ${words.chapter} 字，论证充分展开；`);
  if(hw.length)rules.push("用户勾选了硬件配置，须在“建设内容”中单列硬件小节（设备名称/型号规格/单位/单价/数量/金额），并纳入预算明细；");
  if(funds.length)rules.push(`项目资金来源为：${funds.join("、")}；须在预算章节说明资金构成与使用管理；`);
  if(fmt)rules.push(`文档格式须符合「${fmt.name}」：${fmtSpecText(fmt).replace(/\n/g," ")}`);
@@ -548,7 +548,7 @@ function localDraft(project,school,type,prods,hw,pols,words,funds){
  L.push("从人才培养、学科发展、教学改革、社会服务、竞赛成果等维度展开（建议至少 4 个维度）。");
  L.push("");L.push("七、保障措施");
  L.push("管理机制、管理队伍、环境条件、资金筹措与政府采购合规保障。");
- if(words.total||words.chapter){L.push("");L.push(`（字数要求：整体 ≥${words.total} 字、每章节 ≥${words.chapter} 字；在 Word 中完善时请按此扩充。）`);}
+ if(words.total||words.chapter){L.push("");L.push(`（字数要求：整体 ≥${words.total} 字${words.max?` 且 ≤${words.max} 字`:""}、每章节 ≥${words.chapter} 字；在 Word 中完善时请按此扩充。）`);}
  L.push(appendixText(prods));
  return L.join("\n");
 }
@@ -581,7 +581,7 @@ function gatherGen(){
   hw:$$(".ghw").filter(c=>c.checked).map(c=>db.hardware.find(p=>p.id===c.value)).filter(Boolean),
   pols:$$(".gpol").filter(c=>c.checked).map(c=>db.policies.find(p=>p.id===c.value)).filter(Boolean),
   funds:$$(".gfund").filter(c=>c.checked).map(c=>c.value==="其他"?(($("#fundOther").value.trim()?"其他（"+$("#fundOther").value.trim()+"）":"其他")):c.value),
-  words:{total:parseInt($("#fWordsTotal").value,10)||0,chapter:parseInt($("#fWordsChapter").value,10)||0},
+  words:{total:parseInt($("#fWordsTotal").value,10)||0,max:parseInt($("#fWordsMax")?$("#fWordsMax").value:0,10)||0,chapter:parseInt($("#fWordsChapter").value,10)||0},
   fmt:db.formats.find(f=>f.id===$("#fFormat").value)||null,
   skills:$$(".gskill:checked").map(c=>db.skills.find(k=>k.id===c.value)).filter(Boolean),
   tplText:tplFiles.map(f=>f.text).join("\n\n")};
