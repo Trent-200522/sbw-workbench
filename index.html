@@ -107,6 +107,11 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .field input:focus,.field select:focus,.field textarea:focus,#genResult:focus,#chatInput:focus,#fundOther:focus{outline:none;border-color:#1d4fa8;box-shadow:0 0 0 3px rgba(29,79,168,.12)}
 #btnGen{background:linear-gradient(135deg,#1d4fa8,#2f6bd8);border:none;font-size:15px;letter-spacing:1px}
 #btnGen:hover{background:linear-gradient(135deg,#16408c,#2557b5)}
+.gen-top{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:960px){.gen-top{grid-template-columns:1fr}}
+.gen-main{margin-top:16px}
+.llm-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media(max-width:860px){.llm-grid{grid-template-columns:1fr}}
 .chatbox{border:1px solid #e3e8ef;border-radius:10px;background:#fbfcfe;overflow:hidden}
 .chatlog{min-height:140px;max-height:260px;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}
 .bub{max-width:88%;border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
@@ -177,7 +182,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
   </section>
 
   <section class="view" id="view-skills">
-    <div class="skillhead"><b>🧩 Skill 技能库</b>　管理生成时可套用的技能：新建、导入外部技能（.json / .md / .txt）、一键安装推荐技能；生成时在方案生成台第 7 步选用。</div>
+    <div class="skillhead"><b>🧩 Skill 技能库</b>　管理生成时可套用的技能：新建、导入外部技能（.json / .md / .txt）、一键安装推荐技能；生成时在方案生成台第 8 步选用。</div>
     <div class="grid">
       <div class="skillcard"><h3>＋ 新建技能</h3>
         <div class="field"><label>技能名称 *</label><input id="skName" placeholder="如：去 AI 味润色"></div>
@@ -193,13 +198,12 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
   </section>
 
   <section class="view" id="view-gen">
-    <div class="gen-banner"><div><b>⚡ 方案生成台</b><div class="m">按 0→7 步在左侧勾选配置，右侧配置大模型后一键生成有依据的申报书初稿；生成后可在修订对话框中继续打磨。</div></div></div>
-    <div class="gen-wrap">
-      <div class="gen-left">
-        <div class="card gcard"><h3>📂 0. 现有文件模版（可选）<span style="font-size:12px;color:#6b7280;font-weight:normal">上传后自动检索并补充项目基本信息，可再调整</span></h3>
+    <div class="gen-banner"><div><b>⚡ 方案生成台</b><div class="m">按 1→8 步在下方卡片中勾选配置，再在最底部生成区配置大模型、一键生成有依据的申报书初稿；生成后可在修订对话框中继续打磨。</div></div></div>
+    <div class="gen-top">
+        <div class="card gcard"><h3>📂 1. 现有文件模版（可选）<span style="font-size:12px;color:#6b7280;font-weight:normal">上传后自动检索并补充项目基本信息，可再调整</span></h3>
           <button class="btn" id="btnTplUp" type="button">⬆ 上传文件（Word / PDF / Excel / txt）</button><input type="file" id="tplFile" accept=".docx,.doc,.pdf,.xlsx,.xls,.csv,.txt,.md" multiple hidden>
           <div id="tplFiles" style="margin-top:8px"></div></div>
-        <div class="card gcard"><h3>📝 1. 项目基本信息</h3>
+        <div class="card gcard"><h3>📝 2. 项目基本信息</h3>
           <div class="field"><label>项目名称</label><input id="fProject" placeholder="如：数字经济综合实训中心建设项目"></div>
           <div class="field"><label>客户学校</label><input id="fSchool" placeholder="如：××大学××学院"></div>
           <div class="field"><label>专业</label><input id="fMajor" placeholder="如：人力资源管理 / 数字经济 / 物流管理"></div>
@@ -209,27 +213,30 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
             <input id="fundOther" placeholder="请填写其他资金来源，如：专项基金 / 捐赠收入" style="display:none;margin-top:8px;width:100%;border:1px solid #d5dce6;border-radius:8px;padding:7px 10px;font-size:12px"></div>
           <div class="field" style="margin-bottom:0"><label>参考模板（可多选，来自方案文库）</label><div id="fTemplates" style="max-height:150px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div></div>
         </div>
-        <div class="card gcard"><h3>📦 2. 勾选参与建设的产品</h3><div id="genProducts"></div></div>
-        <div class="card gcard"><h3>🖥 3. 勾选硬件配置（可选）</h3><div id="genHardware"></div></div>
-        <div class="card gcard"><h3>🚩 4. 勾选政策依据（按专业+产品智能匹配，可自由调整）<button class="btn btn-sm" id="btnPolMatch" type="button">🔄 重新匹配</button></h3><div id="genPolicies"></div></div>
-        <div class="card gcard"><h3>🔢 5. 字数选择</h3>
+        <div class="card gcard"><h3>📦 3. 勾选参与建设的产品</h3><div id="genProducts"></div></div>
+        <div class="card gcard"><h3>🖥 4. 勾选硬件配置（可选）</h3><div id="genHardware"></div></div>
+        <div class="card gcard"><h3>🚩 5. 勾选政策依据（按专业+产品智能匹配，可自由调整）<button class="btn btn-sm" id="btnPolMatch" type="button">🔄 重新匹配</button></h3><div id="genPolicies"></div></div>
+        <div class="card gcard"><h3>🔢 6. 字数选择</h3>
           <div class="field"><label>整体最低字数</label><input id="fWordsTotal" type="number" min="0" step="500" value="8000"></div>
+          <div class="field"><label>整体最高字数（选填，0 或留空 = 不限）</label><input id="fWordsMax" type="number" min="0" step="500" value="0"></div>
           <div class="field" style="margin-bottom:0"><label>每章节最低字数</label><input id="fWordsChapter" type="number" min="0" step="100" value="500"></div>
         </div>
-        <div class="card gcard"><h3>🎨 6. 套用格式（来自文章格式库）</h3>
+        <div class="card gcard"><h3>🎨 7. 套用格式（来自文章格式库）</h3>
           <div class="field" style="margin-bottom:0"><select id="fFormat"></select></div></div>
-        <div class="card gcard"><h3>🧩 7. 套用技能（可多选，在「Skill 技能库」新建/导入）</h3>
+        <div class="card gcard"><h3>🧩 8. 套用技能（可多选，在「Skill 技能库」新建/导入）</h3>
           <div id="genSkills" class="chklist"></div>
           <div class="llm-note" id="skillDesc" style="margin-top:6px"></div></div>
       </div>
-      <div class="card gcard">
+      <div class="card gcard gen-main">
         <h3>🤖 大模型配置</h3>
+        <div class="llm-grid">
         <div class="field"><label>模型服务商</label><select id="llmProvider">
           <option value="deepseek">DeepSeek</option><option value="qwen">通义千问（阿里）</option>
           <option value="doubao">豆包（字节）</option><option value="custom">自定义（OpenAI 兼容接口）</option></select></div>
         <div class="field"><label>API 接口地址（baseUrl）</label><input id="llmBase" placeholder="https://api.deepseek.com"></div>
         <div class="field"><label>模型名称（决定实际调用的模型，点击输入框可见常用型号）</label><div style="display:flex;gap:8px"><input id="llmModel" placeholder="deepseek-chat" list="modelList" style="flex:1"><button class="btn" id="btnTestModel" type="button" title="调用服务商 /models 接口核验您配置的模型是否存在">🔍 检测模型</button></div><datalist id="modelList"></datalist></div>
         <div class="field"><label>API Key</label><input id="llmKey" type="password" placeholder="sk-... （仅保存在本机浏览器）"></div>
+        </div>
         <div class="llm-note">未填 API Key 时，将使用本地模板拼装出初稿框架（不联网）；填写后调用大模型流式生成完整初稿。Key 只存 localStorage，不会上传任何第三方服务器。</div>
         <button class="btn btn-primary" id="btnGen" style="width:100%;justify-content:center;padding:11px">⚡ 生成初稿</button>
         <h3 style="margin-top:18px">📄 生成结果（可编辑，建议复制到 Word 继续完善）</h3>
@@ -252,7 +259,6 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           </div>
         </div>
       </div>
-    </div>
   </section>
 
   <section class="foot">
