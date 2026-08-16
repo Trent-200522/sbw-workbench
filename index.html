@@ -107,8 +107,9 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .field input:focus,.field select:focus,.field textarea:focus,#genResult:focus,#chatInput:focus,#fundOther:focus{outline:none;border-color:#1d4fa8;box-shadow:0 0 0 3px rgba(29,79,168,.12)}
 #btnGen{background:linear-gradient(135deg,#1d4fa8,#2f6bd8);border:none;font-size:15px;letter-spacing:1px}
 #btnGen:hover{background:linear-gradient(135deg,#16408c,#2557b5)}
-.gen-top{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
-@media(max-width:960px){.gen-top{grid-template-columns:1fr}}
+.gen-top{columns:2;column-gap:16px}
+.gen-top .gcard{break-inside:avoid;margin-bottom:16px;display:inline-block;width:100%}
+@media(max-width:960px){.gen-top{columns:1}}
 .gen-main{margin-top:16px}
 .llm-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
 @media(max-width:860px){.llm-grid{grid-template-columns:1fr}}
