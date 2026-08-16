@@ -109,6 +109,12 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .hwq{display:none;align-items:center;gap:4px;font-size:12px;color:#1d4fa8;white-space:nowrap;font-weight:600}
 .chkrow:has(.ghw:checked) .hwq{display:flex}
 .hwq input{width:64px;border:1px solid #cdd9ee;border-radius:6px;padding:4px 6px;font-size:13px;text-align:center;color:#1d4fa8;background:#fff}
+.pol-red{border:2px solid #dc2626;background:#fef2f2}
+.pol-blue{border:2px solid #2563eb;background:#eff6ff}
+.flagbadge{font-size:11px;font-weight:700;border-radius:6px;padding:2px 8px;margin-right:6px;white-space:nowrap}
+.flagbadge.red{background:#dc2626;color:#fff}
+.flagbadge.blue{background:#2563eb;color:#fff}
+.chk.off{opacity:.55;cursor:not-allowed}
 .field input:focus,.field select:focus,.field textarea:focus,#genResult:focus,#chatInput:focus,#fundOther:focus{outline:none;border-color:#1d4fa8;box-shadow:0 0 0 3px rgba(29,79,168,.12)}
 #btnGen{background:linear-gradient(135deg,#1d4fa8,#2f6bd8);border:none;font-size:15px;letter-spacing:1px}
 #btnGen:hover{background:linear-gradient(135deg,#16408c,#2557b5)}
@@ -177,6 +183,9 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
   <section class="view" id="view-policies">
     <div class="view-head"><h2>🚩 政策资料库 <span class="hint">写方案时引用，作为申报的政策依据</span> <span class="cnt" id="polCnt"></span></h2>
       <input type="text" id="polSearch" placeholder="🔍 搜索政策名/发文单位/关键词">
+      <button class="btn" id="btnPolCheck" title="大模型核验现有政策是否废止，废止标红待处理">🔍 废止核验</button>
+      <button class="btn" id="btnPolFetch" title="大模型检索商科相关现行政策，标蓝入库待复核">🌐 检索新政策</button>
+      <button class="btn" id="btnPolSched" title="设置定期自动核验与检索">⏰ 定期检索</button>
       <button class="btn btn-primary" id="btnAddPol">＋ 新增政策</button></div>
     <div class="grid" id="polGrid"></div>
   </section>
@@ -279,6 +288,6 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
   </section>
 </main>
 <div id="mask" hidden><div class="modal" id="modalBox"></div></div>
-<script src="app.js?v=20260816b"></script>
+<script src="app.js?v=20260816c"></script>
 </body>
 </html>
