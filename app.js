@@ -130,8 +130,8 @@ function renderHardware(){
  $("#hwGrid").innerHTML=list.map(p=>`<div class="card item">
   <div class="head"><b>${esc(p.name)}</b><span class="tag">${esc(p.unit)}</span></div>
   <div class="row"><span class="k">型号规格：</span>${esc(p.model)}</div>
-  <div class="row"><span class="k">单价：</span><b>${esc(p.price)} 万</b>　<span class="k">数量：</span><b>${esc(p.qty)}</b></div>
-  <div class="row"><span class="k">金额：</span><b>${esc(p.amount)} 万元</b></div>
+  <div class="row"><span class="k">单价：</span><b>${esc(p.price)} 万 / ${esc(p.unit)}</b></div>
+  ${p.amount?`<div class="row"><span class="k">参考金额：</span><b>${esc(p.amount)} 万元</b></div>`:""}
   <div class="acts"><button class="btn btn-sm" data-act="edit" data-kind="hardware" data-id="${p.id}">✎ 编辑</button>
   <button class="btn btn-sm btn-danger" data-act="del" data-kind="hardware" data-id="${p.id}">🗑 删除</button></div></div>`).join("")||EMPTY;
 }
@@ -209,7 +209,7 @@ function renderGen(){
  $("#fTemplates").innerHTML=db.proposals.map(p=>`<label class="chk"><input type="checkbox" class="gtpl" value="${p.id}"><span class="n">${esc(p.title)}</span><span class="m">${esc(p.type)}</span></label>`).join("")||`<div style="color:#6b7280">方案文库为空，可不用模板。</div>`;
  $("#genFunds").innerHTML=db.fundOptions.map(o=>`<label class="chk"><input type="checkbox" class="gfund" value="${esc(o)}"><span class="n">${esc(o)}</span></label>`).join("");syncFundOther();
  $("#genProducts").innerHTML=db.products.map(p=>`<label class="chk"><input type="checkbox" class="gp" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.cat)} · ${esc(p.price)}</span></label>`).join("")||`<div style="color:#6b7280">产品库为空，请先到「产品资料库」新增。</div>`;
- $("#genHardware").innerHTML=db.hardware.map(p=>`<label class="chk"><input type="checkbox" class="ghw" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.model)} · ${esc(p.amount)}万</span></label>`).join("")||`<div style="color:#6b7280">硬件库为空，请先到「硬件库」新增。</div>`;
+ $("#genHardware").innerHTML=db.hardware.map(p=>`<div class="chkrow"><label class="chk"><input type="checkbox" class="ghw" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.model)} · ${esc(p.price)}万/${esc(p.unit)}</span></label><span class="hwq">数量<input type="number" min="1" step="1" value="${p.qty||1}" data-hwq="${p.id}"></span></div>`).join("")||`<div style="color:#6b7280">硬件库为空，请先到「硬件库」新增。</div>`;
  $("#genPolicies").innerHTML=db.policies.map(p=>`<label class="chk"><input type="checkbox" class="gpol" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.org)} · ${esc(p.date)}</span></label>`).join("")||`<div style="color:#6b7280">政策库为空，请先到「政策资料库」新增。</div>`;
  const curF=$("#fFormat").value;$("#fFormat").innerHTML=`<option value="">不套用（默认样式）</option>`+db.formats.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join("");if(curF)$("#fFormat").value=curF;
  const curK=$$(".gskill:checked").map(c=>c.value);
@@ -261,20 +261,17 @@ function libForm(id){
   persist();closeModal();renderAll();toast("已保存（外部卡片自动提炼 50 字摘要）");};
 }
 function hwForm(id){
- const p=id?db.hardware.find(x=>x.id===id):{name:"",model:"",unit:"套",price:"",qty:1,amount:""};
+ const p=id?db.hardware.find(x=>x.id===id):{name:"",model:"",unit:"套",price:""};
  openModal(`<h3>${id?"编辑":"新增"}硬件</h3>
  <div class="field"><label>设备名称 *</label><input id="mName" value="${esc(p.name)}"></div>
  <div class="field"><label>型号规格</label><input id="mModel" value="${esc(p.model)}" placeholder="如：i5-12400/16G/512G SSD"></div>
  <div class="field"><label>单位</label><input id="mUnit" value="${esc(p.unit)}" placeholder="套 / 台 / 批"></div>
  <div class="field"><label>单价（万元）</label><input id="mPrice" type="number" step="0.01" min="0" value="${esc(p.price)}"></div>
- <div class="field"><label>数量</label><input id="mQty" type="number" step="1" min="0" value="${esc(p.qty)}"></div>
- <div class="field"><label>金额（万元，可手填；改单价/数量时自动计算）</label><input id="mAmount" type="number" step="0.01" min="0" value="${esc(p.amount)}"></div>
+ <div style="color:#6b7280;font-size:12px;margin:-4px 0 10px">数量无需在此填写：在方案生成台勾选该硬件时逐项输入，预算明细表金额按“单价×数量”自动计算。</div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
- const calc=()=>{const a=parseFloat($("#mPrice").value)||0,q=parseFloat($("#mQty").value)||0;$("#mAmount").value=Math.round(a*q*100)/100;};
- $("#mPrice").oninput=calc;$("#mQty").oninput=calc;
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写设备名称");return;}
-  const data={name,model:$("#mModel").value.trim(),unit:$("#mUnit").value.trim()||"套",price:parseFloat($("#mPrice").value)||0,qty:parseFloat($("#mQty").value)||0,amount:parseFloat($("#mAmount").value)||0};
+  const data={name,model:$("#mModel").value.trim(),unit:$("#mUnit").value.trim()||"套",price:parseFloat($("#mPrice").value)||0};
   if(id)Object.assign(p,data);else db.hardware.push({id:uid(),...data});
   persist();closeModal();renderAll();toast("已保存");};
 }
@@ -600,7 +597,7 @@ function gatherGen(){
   type:$("#fType").value,
   tpls:$$(".gtpl").filter(c=>c.checked).map(c=>db.proposals.find(p=>p.id===c.value)).filter(Boolean),
   prods:$$(".gp").filter(c=>c.checked).map(c=>db.products.find(p=>p.id===c.value)).filter(Boolean),
-  hw:$$(".ghw").filter(c=>c.checked).map(c=>db.hardware.find(p=>p.id===c.value)).filter(Boolean),
+  hw:$$(".ghw").filter(c=>c.checked).map(c=>{const rec=db.hardware.find(p=>p.id===c.value);if(!rec)return null;const el=document.querySelector(`input[data-hwq="${c.value}"]`);const q=Math.max(1,parseFloat(el&&el.value)||1);return{...rec,qty:q,amount:Math.round((parseFloat(rec.price)||0)*q*100)/100};}).filter(Boolean),
   pols:$$(".gpol").filter(c=>c.checked).map(c=>db.policies.find(p=>p.id===c.value)).filter(Boolean),
   funds:$$(".gfund").filter(c=>c.checked).map(c=>c.value==="其他"?(($("#fundOther").value.trim()?"其他（"+$("#fundOther").value.trim()+"）":"其他")):c.value),
   words:{total:parseInt($("#fWordsTotal").value,10)||0,max:parseInt($("#fWordsMax")?$("#fWordsMax").value:0,10)||0,chapter:parseInt($("#fWordsChapter").value,10)||0},
