@@ -82,6 +82,8 @@ if(!Array.isArray(db.fundOptions))db.fundOptions=[];
 (()=>{let ch=false;for(const o of seed().fundOptions){if(!db.fundOptions.includes(o)){db.fundOptions.splice(db.fundOptions.includes("其他")?db.fundOptions.indexOf("其他"):db.fundOptions.length,0,o);ch=true;}}if(db.fundOptions.includes("其他")&&db.fundOptions.indexOf("其他")!==db.fundOptions.length-1){db.fundOptions=db.fundOptions.filter(x=>x!=="其他").concat("其他");ch=true;}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 /* 兼容旧数据：移除已废弃的历史预置资金来源选项 */
 (()=>{const HIST=["财政性资金","学校自筹"];const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!HIST.includes(x));if(db.fundOptions.length!==n)localStorage.setItem(LS,JSON.stringify(db));})();
+/* 兼容旧数据：移除误录入的纯数字无效资金来源选项（如“1”） */
+(()=>{const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!/^\d+$/.test(String(x).trim()));if(db.fundOptions.length!==n)localStorage.setItem(LS,JSON.stringify(db));})();
 /* 兼容旧数据：预置技能按名补齐（含新增的“去 AI 味润色”） */
 (()=>{let ch=false;for(const k of seed().skills){if(!db.skills.some(x=>x.name===k.name)){db.skills.push({id:uid(),name:k.name,desc:k.desc,prompt:k.prompt,seed:1});ch=true;}}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
 /* 兼容旧数据：预置产品的类别同步为最新种子值（用户自建产品不动） */
@@ -105,12 +107,15 @@ function renderTodos(){
  }).join(""):`<div style="color:#6b7280;font-size:13px">今天没有待办 ✨</div>`;
 }
 const EMPTY=`<div class="card item" style="grid-column:1/-1;color:#6b7280">暂无数据，点击右上角「新增」录入。</div>`;
+/* 领域/类别标签配色：不同类别不同颜色 */
+const CAT_COLORS=["#1d4fa8","#15803d","#b45309","#7c3aed","#0e7490","#be185d","#4d7c0f","#9333ea","#0f766e","#c2410c"];
+function catColor(cat){const c=String(cat||"").split("、")[0].trim();if(!c)return "#6b7280";let i=CATS.indexOf(c);if(i<0){let h=0;for(const ch of c)h=(h*31+ch.charCodeAt(0))>>>0;i=h%CAT_COLORS.length;}return CAT_COLORS[i%CAT_COLORS.length];}
 function renderProducts(){
  const q=$("#prodSearch").value.trim();
  const list=db.products.filter(p=>!q||(p.name+p.cat+textOf(p.params)+p.points).includes(q));
  $("#prodCnt").textContent=`共 ${db.products.length} 款`;
  $("#prodGrid").innerHTML=list.map(p=>`<div class="card item">
-  <div class="head"><b>${esc(p.name)}</b><span class="tag">${esc(p.cat)}</span></div>
+  <div class="head"><b>${esc(p.name)}</b><span class="tag" style="background:${catColor(p.cat)}1a;color:${catColor(p.cat)}">${esc(p.cat)}</span></div>
   <div class="row"><span class="k">参考报价：</span><b>${esc(p.price)}</b></div>
   <div class="row"><span class="k">参数提炼：</span>${esc(sum50(p.params))||"（空）"}</div>
   <div class="row"><span class="k">卖点：</span>${esc(sum50(p.points))}</div>
