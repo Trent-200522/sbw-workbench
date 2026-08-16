@@ -505,9 +505,12 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
  "“建设背景与政策依据”部分必须逐条引用用户勾选的政策（含文件名与文号），不得编造任何政策文件名或文号；",
  "“建设内容”部分必须逐款融入用户勾选的产品（名称、核心参数、卖点），参数不得夸大或虚构；",
  "“预算”部分仅写资金构成、使用管理与价格依据说明，不要自行绘制预算明细表，系统会根据勾选产品与硬件自动插入标准《项目预算明细表》（含明细与合计，合计=分项之和）；",
- "正文中不要自行撰写“附件”章节，系统会在文末自动附上所选产品核心参数表格；",
  "对可推断的一般性内容（政策背景、行业趋势、常规建设思路等）可直接补全展开，尽量不留占位；但学校成立时间、专业开设年份、在校生/专业学生人数、教师人数、现有设备清单等确定性数据一律禁止编造，保留“（待核实：请学校提供×××）”字样，供用户后续确认；"];
- if(tplText)rules.push(`用户上传了现有文件模版，内容摘录如下，请从中提取项目背景、学校情况、建设需求等可用信息并融入正文：\n"""\n${tplText.slice(0,5000)}\n"""`);
+ const tplHasAppx=!!tplText&&(/^附件\s*$/m.test(tplText)||/^附件[一二三四五六七八九十\d]/m.test(tplText)||/^[一二三四五六七八九十]+、[^\n]*附件/m.test(tplText));
+ if(tplText){rules.push(`用户上传了现有文件模版，内容摘录如下，请从中提取项目背景、学校情况、建设需求等可用信息并融入正文：\n"""\n${tplText.slice(0,5000)}\n"""`);
+  rules.push("正文章节结构必须严格跟随上传模版的章节标题与顺序（含各级标题编号样式），不得自行改用默认建议章节；");
+  rules.push(tplHasAppx?"模版包含“附件”章节：正文中保留该章节标题，但不要填写具体附件内容，系统会自动在该章节下填入所选产品核心参数表格；":"模版不含“附件”章节：正文中不要自行撰写“附件”章节，系统会在文末自动追加并附上所选产品核心参数表格；");}
+ else rules.push("正文中不要自行撰写“附件”章节，系统会在文末自动附上所选产品核心参数表格；");
  if(db.train&&db.train.style&&db.train.on)rules.push(`以下写作规范由历史方案自动训练总结而来，请严格遵守：${db.train.style.slice(0,1500)}`);
  if(words.total||words.chapter||words.max)rules.push(`字数要求：全文不少于 ${words.total} 字${words.max?`，且全文不超过 ${words.max} 字（请在该上限内合理分配各章节篇幅）`:""}，且“一、/二、…”每个章节不少于 ${words.chapter} 字，论证充分展开；`);
  if(hw.length)rules.push("用户勾选了硬件配置，须在“建设内容”中单列硬件小节（设备名称/型号规格/单位/单价/数量/金额），并纳入预算明细；");
@@ -528,7 +531,7 @@ ${hw.map((p,i)=>`${i+1}. ${p.name}｜型号：${p.model}｜单位：${p.unit}｜
 【勾选政策依据】
 ${pols.map((p,i)=>`${i+1}. ${p.name}（${p.org}，${p.date}）关键词：${p.keywords}。要点：${p.summary}。适用：${p.usage}`).join("\n")||"（未勾选政策）"}`;
  if(tpls.length)user+=`\n【参考模板】请模仿以下历史方案的章节结构与措辞风格（学校/产品/预算等信息以本次勾选为准；多份模板冲突时以第一份为主）：\n`+tpls.map((t,i)=>`模板${i+1}《${t.title}》：\n${(t.content||t.keypoints||"").slice(0,2000)}`).join("\n---\n");
- user+=`\n\n建议章节：一、项目背景与政策依据；二、学校现状与需求分析；三、建设目标与思路；四、建设内容与产品方案（含参数与卖点融入）；五、资金预算与用途（明细合计=总额，注明资金来源）；六、组织实施与进度安排；七、预期效益分析；八、保障措施。`;
+ if(!tplText)user+=`\n\n建议章节：一、项目背景与政策依据；二、学校现状与需求分析；三、建设目标与思路；四、建设内容与产品方案（含参数与卖点融入）；五、资金预算与用途（明细合计=总额，注明资金来源）；六、组织实施与进度安排；七、预期效益分析；八、保障措施。`;
  return [{role:"system",content:sys},{role:"user",content:user}];
 }
 async function streamChat(messages,onChunk){
@@ -589,6 +592,16 @@ function insertBudgetTable(text,prods,hw){
  if(ai>=0){lines.splice(ai,0,...tbl.split("\n").filter(Boolean));return lines.join("\n");}
  return text+tbl;
 }
+/* 附件处理：正文已有附件章节（跟随模版）则把参数表格插入该章节下，否则追加文末 */
+function attachAppendix(text,prods){
+ const ap=appendixText(prods);if(!ap)return text;
+ const lines=text.split(/\r?\n/);
+ const hi=lines.findIndex(l=>{const t=l.trim();return t==="附件"||/^附件[一二三四五六七八九十\d]/.test(t)||/^[一二三四五六七八九十]+、[^\n]*附件/.test(t);});
+ if(hi<0)return text+ap;
+ const body=ap.split("\n").filter(l=>l.trim()&&l.trim()!=="附件");
+ lines.splice(hi+1,0,...body);
+ return lines.join("\n");
+}
 function html2mdLines(html){
  const doc=new DOMParser().parseFromString(html,"text/html");const out=[];
  const walk=el=>{for(const n of el.children){const tag=n.tagName.toLowerCase();
@@ -627,7 +640,7 @@ $("#btnGen").onclick=async()=>{
  if(!db.llm.key){ta.value=localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds);toast("未配置 API Key，已用本地模板拼装框架");return;}
  const btn=$("#btnGen");btn.disabled=true;btn.textContent="⏳ 生成中…";ta.value="";
  try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText),t=>{ta.value+=t;ta.scrollTop=ta.scrollHeight;});
-  ta.value=insertBudgetTable(ta.value,g.prods,g.hw);ta.value+=appendixText(g.prods);updateChecklist();toast("生成完成（已自动插入预算明细表与产品参数附件）");}
+  ta.value=insertBudgetTable(ta.value,g.prods,g.hw);ta.value=attachAppendix(ta.value,g.prods);updateChecklist();toast("生成完成（结构跟随模版，已自动插入预算明细表与产品参数附件）");}
  catch(err){ta.value+=(ta.value?"\n\n":"")+"【生成失败】"+err.message+"\n请检查 API Key / 接口地址 / 模型名称；或清空 Key 后使用本地模板拼装。";}
  finally{btn.disabled=false;btn.textContent="⚡ 生成初稿";}
 };
