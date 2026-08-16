@@ -152,13 +152,17 @@ function renderPolicies(){
  const q=$("#polSearch").value.trim();
  const list=db.policies.filter(p=>!q||(p.name+p.org+p.keywords+textOf(p.summary)).includes(q));
  $("#polCnt").textContent=`共 ${db.policies.length} 条`;
- $("#polGrid").innerHTML=list.map(p=>`<div class="card item">
-  <div class="head"><b>${esc(p.name)}</b><span class="tag orange">${esc(p.org)}</span></div>
+ $("#polGrid").innerHTML=list.map(p=>{const fl=p.flag==="red"?" pol-red":p.flag==="blue"?" pol-blue":"";
+  const badge=p.flag==="red"?`<span class="flagbadge red">⚠ 疑似废止·待处理</span>`:p.flag==="blue"?`<span class="flagbadge blue">🆕 自动检索·待复核</span>`:"";
+  return `<div class="card item${fl}">
+  <div class="head"><b>${esc(p.name)}</b>${badge}<span class="tag orange">${esc(p.org)}</span></div>
   <div class="row"><span class="k">时间：</span><b>${esc(p.date)}</b>　<span class="k">关键词：</span><b>${esc(p.keywords)}</b></div>
+  ${p.flagReason?`<div class="row" style="color:${p.flag==="red"?"#b91c1c":"#1d4fa8"}">${esc(p.flagReason)}</div>`:""}
   <div class="row">${esc(sum50(p.summary))||""}</div>
   <div class="row"><span class="k">适用：</span>${esc(p.usage)}</div>
-  <div class="acts"><button class="btn btn-sm" data-act="edit" data-kind="policy" data-id="${p.id}">✎ 编辑</button>
-  <button class="btn btn-sm btn-danger" data-act="del" data-kind="policy" data-id="${p.id}">🗑 删除</button></div></div>`).join("")||EMPTY;
+  <div class="acts">${p.flag?`<button class="btn btn-sm btn-primary" data-act="polkeep" data-id="${p.id}">✅ 核实保留</button>`:""}
+  <button class="btn btn-sm" data-act="edit" data-kind="policy" data-id="${p.id}">✎ 编辑</button>
+  <button class="btn btn-sm btn-danger" data-act="del" data-kind="policy" data-id="${p.id}">🗑 删除</button></div></div>`;}).join("")||EMPTY;
 }
 function renderFormats(){
  $("#fmtCnt").textContent=`共 ${db.formats.length} 套`;
@@ -210,7 +214,7 @@ function renderGen(){
  $("#genFunds").innerHTML=db.fundOptions.map(o=>`<label class="chk"><input type="checkbox" class="gfund" value="${esc(o)}"><span class="n">${esc(o)}</span></label>`).join("");syncFundOther();
  $("#genProducts").innerHTML=db.products.map(p=>`<label class="chk"><input type="checkbox" class="gp" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.cat)} · ${esc(p.price)}</span></label>`).join("")||`<div style="color:#6b7280">产品库为空，请先到「产品资料库」新增。</div>`;
  $("#genHardware").innerHTML=db.hardware.map(p=>`<div class="chkrow"><label class="chk"><input type="checkbox" class="ghw" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.model)} · ${esc(p.price)}万/${esc(p.unit)}</span></label><span class="hwq">数量<input type="number" min="1" step="1" value="${p.qty||1}" data-hwq="${p.id}"></span></div>`).join("")||`<div style="color:#6b7280">硬件库为空，请先到「硬件库」新增。</div>`;
- $("#genPolicies").innerHTML=db.policies.map(p=>`<label class="chk"><input type="checkbox" class="gpol" value="${p.id}"><span class="n">${esc(p.name)}</span><span class="m">${esc(p.org)} · ${esc(p.date)}</span></label>`).join("")||`<div style="color:#6b7280">政策库为空，请先到「政策资料库」新增。</div>`;
+ $("#genPolicies").innerHTML=db.policies.map(p=>`<label class="chk${p.flag?" off":""}"><input type="checkbox" class="gpol" value="${p.id}" ${p.flag?"disabled":""}><span class="n">${esc(p.name)}</span><span class="m">${esc(p.org)} · ${esc(p.date)}${p.flag?(p.flag==="red"?" · ⛔ 待处理":" · ⛔ 待复核"):""}</span></label>`).join("")||`<div style="color:#6b7280">政策库为空，请先到「政策资料库」新增。</div>`;
  const curF=$("#fFormat").value;$("#fFormat").innerHTML=`<option value="">不套用（默认样式）</option>`+db.formats.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join("");if(curF)$("#fFormat").value=curF;
  const curK=$$(".gskill:checked").map(c=>c.value);
  $("#genSkills").innerHTML=db.skills.map(k=>`<label class="chk"><input type="checkbox" class="gskill" value="${k.id}" ${curK.includes(k.id)?"checked":""}><span class="n">${esc(k.name)}</span><span class="m">${esc(k.desc||"")}</span></label>`).join("")||`<div style="color:#6b7280">技能库为空，请到「🧩 Skill 技能库」新建或导入。</div>`;
@@ -443,7 +447,8 @@ document.addEventListener("click",e=>{
   if(act==="del"){if(!confirm("确定删除该条目？"))return;db[KIND[kind]]=db[KIND[kind]].filter(x=>x.id!==id);persist();renderAll();return;}
   if(act==="edit"){({product:()=>libForm(id),hardware:()=>hwForm(id),proposal:()=>proposalForm(id),policy:()=>policyForm(id),format:()=>formatForm(id),skill:()=>skillForm(id)})[kind]();return;}
   if(act==="view"){const p=db.products.find(x=>x.id===id);openModal(`<h3>${esc(p.name)} · 完整核心参数</h3><div class="rte" style="max-height:420px">${/<[a-z][\s\S]*>/i.test(p.params)?p.params:esc(p.params).replace(/\r?\n/g,"<br>")}</div><div class="acts"><button class="btn btn-primary" id="mOk">关闭</button></div>`);$("#mOk").onclick=closeModal;return;}
-  if(act==="copy"){const p=db.proposals.find(x=>x.id===id);copyText(p.keypoints);return;}}
+  if(act==="copy"){const p=db.proposals.find(x=>x.id===id);copyText(p.keypoints);return;}
+  if(act==="polkeep"){const p=db.policies.find(x=>x.id===id);if(p){delete p.flag;delete p.flagReason;persist();renderAll();toast("已核实保留，该政策恢复可选");}return;}}
  const tt=e.target.closest("button[data-todo]");
  if(tt){const{todo,id}=tt.dataset;const t=db.todos.find(x=>x.id===id);if(!t)return;
   if(todo==="done"||todo==="del")db.todos=db.todos.filter(x=>x.id!==id);
@@ -609,7 +614,7 @@ function gatherGen(){
   tpls:$$(".gtpl").filter(c=>c.checked).map(c=>db.proposals.find(p=>p.id===c.value)).filter(Boolean),
   prods:$$(".gp").filter(c=>c.checked).map(c=>db.products.find(p=>p.id===c.value)).filter(Boolean),
   hw:$$(".ghw").filter(c=>c.checked).map(c=>{const rec=db.hardware.find(p=>p.id===c.value);if(!rec)return null;const el=document.querySelector(`input[data-hwq="${c.value}"]`);const q=Math.max(1,parseFloat(el&&el.value)||1);return{...rec,qty:q,amount:Math.round((parseFloat(rec.price)||0)*q*100)/100};}).filter(Boolean),
-  pols:$$(".gpol").filter(c=>c.checked).map(c=>db.policies.find(p=>p.id===c.value)).filter(Boolean),
+  pols:$$(".gpol").filter(c=>c.checked).map(c=>db.policies.find(p=>p.id===c.value)).filter(p=>p&&!p.flag),
   funds:$$(".gfund").filter(c=>c.checked).map(c=>c.value==="其他"?(($("#fundOther").value.trim()?"其他（"+$("#fundOther").value.trim()+"）":"其他")):c.value),
   words:{total:parseInt($("#fWordsTotal").value,10)||0,max:parseInt($("#fWordsMax")?$("#fWordsMax").value:0,10)||0,chapter:parseInt($("#fWordsChapter").value,10)||0},
   fmt:db.formats.find(f=>f.id===$("#fFormat").value)||null,
@@ -746,6 +751,45 @@ setInterval(()=>{const t=db.train;if(!t||!t.on||!db.llm.key)return;const now=new
  const gap=t.freq==="hourly"?36e5:t.freq==="weekly"?7*864e5:864e5;
  if(Date.now()-(t.lastRun||0)<gap)return;
  if(t.freq==="hourly"||(t.time||"09:00")===hm){runTrain().then(()=>toast("🕒 自动训练完成，写作规范已更新")).catch(()=>{});}},60000);
+
+/* ---------- 政策库：废止核验 + 定期自动检索新政策 ---------- */
+async function llmOnce(messages){const base=(db.llm.baseUrl||"").replace(/\/+$/,"",);if(!base)throw new Error("未配置接口地址");if(!db.llm.key)throw new Error("请先在大模型配置中填写 API Key");
+ const res=await fetch(base+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+db.llm.key},body:JSON.stringify({model:db.llm.model,messages,stream:false,temperature:0.2})});
+ if(!res.ok){let t="";try{t=await res.text();}catch(e){}throw new Error(`HTTP ${res.status}：${t.slice(0,200)}`);}
+ const j=await res.json();return (j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content)||"";}
+function parseJsonArr(s){const m=String(s).match(/\[[\s\S]*\]/);if(!m)return[];try{const a=JSON.parse(m[0]);return Array.isArray(a)?a:[];}catch(e){return[];}}
+async function checkPolicies(){
+ if(!db.policies.length)throw new Error("政策库为空，请先新增政策");
+ const out=await llmOnce([{role:"system",content:"你是政策法规合规审查专家。逐条判断政策文件是否已废止、失效或已被新文件替代：仅当确知已废止/替代时判 repealed；确知现行有效判 valid；不能确定判 uncertain。只返回纯 JSON 数组，不要其他文字。"},
+ {role:"user",content:`请审查以下政策，返回 [{"name":"与原文完全一致","status":"valid|repealed|uncertain","reason":"50字内依据"}]：\n${db.policies.map(p=>`- ${p.name}（${p.org}，${p.date}）`).join("\n")}`}]);
+ let n=0;for(const r of parseJsonArr(out)){const p=db.policies.find(x=>x.name===r.name);if(!p||p.flag==="red")continue;
+  if(r.status==="repealed"){p.flag="red";p.flagReason="⚠ 系统核验：疑似已废止/不再使用 —— "+(r.reason||"");n++;}}
+ persist();renderAll();return n;}
+async function fetchNewPolicies(){
+ const cats=[...new Set(db.products.map(p=>String(p.cat||"").split("、")[0]))].filter(Boolean).slice(0,8).join("、");
+ const out=await llmOnce([{role:"system",content:"你是商科职业教育领域的政策检索助理。请基于你的知识，回忆梳理与用户现有政策相关、且与商科领域相关、现行有效、且尚不在用户库中的政策文件。要求：①只列你确知真实存在且现行有效的文件；②名称必须含文号，文号必须真实，绝对禁止编造；③最多 5 条；④只返回纯 JSON 数组。"},
+ {role:"user",content:`现有政策库：\n${db.policies.map(p=>"- "+p.name).join("\n")||"（空）"}\n商科相关领域：${cats||"工商管理、人力资源管理、市场营销、物流管理、数字经济、数字贸易、创新创业"}\n返回 [{"name":"政策名称（含文号）","org":"发文单位","date":"时间如2023-05","keywords":"关键词、分隔","summary":"正文摘要300字内","usage":"适用场景"}]`}]);
+ let n=0;for(const r of parseJsonArr(out)){const name=String(r.name||"").trim();if(!name||db.policies.some(p=>p.name===name))continue;
+  db.policies.push({id:uid(),name,org:String(r.org||""),date:String(r.date||""),keywords:String(r.keywords||""),summary:String(r.summary||""),usage:String(r.usage||"建设背景与政策依据章节引用"),flag:"blue",flagReason:"🆕 自动检索入库的新政策，请自行核实名称/文号/内容真伪后决定保留；未处理前生成台不可勾选。"});n++;}
+ persist();renderAll();return n;}
+db.polScan=db.polScan||{on:false,time:"09:30",freq:"weekly",lastRun:0,logs:[]};
+function polScanModal(){const s=db.polScan;
+ openModal(`<h3>⏰ 定期自动检索政策</h3>
+ <p class="hint" style="margin-bottom:8px">原理：到点后由大模型①核验现有政策是否废止（标红待处理）；②检索商科相关现行政策并按新增政策模块梳理入库（标蓝待复核）。未处理的政策在方案生成台自动禁用。需保持页面打开且已配置 API Key。</p>
+ <label class="chk"><input type="checkbox" id="psOn" ${s.on?"checked":""}><span class="n">启用定期自动检索（页面需保持打开）</span></label>
+ <div class="field"><label>检索时间点</label><input id="psTime" type="time" value="${s.time||"09:30"}"></div>
+ <div class="field"><label>频率</label><select id="psFreq"><option value="daily" ${s.freq==="daily"?"selected":""}>每天</option><option value="weekly" ${s.freq==="weekly"?"selected":""}>每周</option></select></div>
+ <div class="field"><label>检索记录</label><div class="hint" style="max-height:90px;overflow:auto">${(s.logs||[]).slice(-6).map(l=>esc(l)).join("<br>")||"暂无"}</div></div>
+ <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
+ $("#mCancel").onclick=closeModal;
+ $("#mOk").onclick=()=>{db.polScan.on=$("#psOn").checked;db.polScan.time=$("#psTime").value;db.polScan.freq=$("#psFreq").value;persist();closeModal();toast("定期检索设置已保存");};}
+setInterval(()=>{const s=db.polScan;if(!s||!s.on||!db.llm.key)return;const now=new Date();const hm=String(now.getHours()).padStart(2,"0")+":"+String(now.getMinutes()).padStart(2,"0");
+ if((s.time||"09:30")!==hm)return;const gap=s.freq==="weekly"?7*864e5:864e5;if(Date.now()-(s.lastRun||0)<gap)return;s.lastRun=Date.now();
+ (async()=>{let m1=0,m2=0;try{m1=await checkPolicies();}catch(e){}try{m2=await fetchNewPolicies();}catch(e){}
+  s.logs.push(`${todayStr()} ${hm} 自动检索：标红 ${m1} 条、新入库标蓝 ${m2} 条`);s.logs=s.logs.slice(-20);persist();toast(`🚩 政策自动检索完成：标红 ${m1}、新增标蓝 ${m2}`);})();},60000);
+$("#btnPolCheck").onclick=async e=>{e.target.disabled=true;try{const n=await checkPolicies();toast(n?`核验完成：${n} 条政策疑似废止已标红，请处理`:"核验完成：未发现已废止政策");}catch(err){alert("核验失败："+err.message);}e.target.disabled=false;};
+$("#btnPolFetch").onclick=async e=>{e.target.disabled=true;try{const n=await fetchNewPolicies();toast(n?`检索完成：新入库 ${n} 条（标蓝待复核）`:"检索完成：暂无新政策入库");}catch(err){alert("检索失败："+err.message);}e.target.disabled=false;};
+$("#btnPolSched").onclick=polScanModal;
 
 renderAll();
 $("#btnTrainPanel").onclick=trainModal;
