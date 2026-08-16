@@ -348,7 +348,7 @@ function proposalForm(id){
  <div class="field"><label>客户学校</label><input id="mClient" value="${esc(p.client)}"></div>
  <div class="field"><label>年份</label><input id="mYear" value="${esc(p.year)}"></div>
  <div class="field"><label>要点</label><textarea id="mKeys">${esc(p.keypoints)}</textarea></div>
- <div class="field"><label>可复用内容（正文摘录，上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 txt/md/docx（自动识别标题/类型/客户学校，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx" hidden></label><div class="rte" id="mContent" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.content)?p.content:esc(p.content).replace(/\r?\n/g,"<br>")}</div></div>
+ <div class="field"><label>可复用内容（正文摘录，上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/PDF/Excel/txt（自动识别标题/类型/客户学校，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.pdf,.xlsx,.xls,.csv" hidden></label><div class="rte" id="mContent" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.content)?p.content:esc(p.content).replace(/\r?\n/g,"<br>")}</div></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  $("#mUp1").onclick=()=>$("#mFile1").click();
  $("#mFile1").onchange=async e=>{const f=e.target.files[0];if(!f)return;
@@ -373,7 +373,7 @@ function policyForm(id){
  <div class="field"><label>发文单位</label><input id="mOrg" value="${esc(p.org)}"></div>
  <div class="field"><label>时间</label><input id="mDate" value="${esc(p.date)}" placeholder="如：2021-12"></div>
  <div class="field"><label>关键词</label><input id="mKeys" value="${esc(p.keywords)}" placeholder="逗号分隔"></div>
- <div class="field"><label>正文内容（上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 txt/md/docx（自动识别名称/单位/时间/关键词，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx" hidden></label><div class="rte" id="mSum" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.summary)?p.summary:esc(p.summary).replace(/\r?\n/g,"<br>")}</div></div>
+ <div class="field"><label>正文内容（上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/PDF/Excel/txt（自动识别名称/单位/时间/关键词，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.pdf,.xlsx,.xls,.csv" hidden></label><div class="rte" id="mSum" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.summary)?p.summary:esc(p.summary).replace(/\r?\n/g,"<br>")}</div></div>
  <div class="field"><label>适用场景</label><input id="mUse" value="${esc(p.usage)}" placeholder="如：建设背景引用"></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  $("#mUp1").onclick=()=>$("#mFile1").click();
