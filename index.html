@@ -223,6 +223,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <div class="field"><label>客户学校</label><input id="fSchool" placeholder="如：××大学××学院"></div>
           <div class="field"><label>专业</label><input id="fMajor" placeholder="如：人力资源管理 / 数字经济 / 物流管理"></div>
           <div class="field"><label>方案类型</label><select id="fType"><option>项目申报书</option><option>建设方案</option><option>报价方案</option></select></div>
+          <div class="field"><label>整体预算（万元，选填；产品/硬件等综合费用上限）</label><input id="fBudget" type="number" min="0" step="1" value="0" placeholder="0 或留空 = 不限"></div>
           <div class="field"><label>资金来源（可多选，“其他”勾选后可自行填写）</label>
             <div id="genFunds" style="max-height:120px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div>
             <input id="fundOther" placeholder="请填写其他资金来源，如：专项基金 / 捐赠收入" style="display:none;margin-top:8px;width:100%;border:1px solid #d5dce6;border-radius:8px;padding:7px 10px;font-size:12px"></div>
@@ -288,6 +289,6 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
   </section>
 </main>
 <div id="mask" hidden><div class="modal" id="modalBox"></div></div>
-<script src="app.js?v=20260816e"></script>
+<script src="app.js?v=20260816f"></script>
 </body>
 </html>
