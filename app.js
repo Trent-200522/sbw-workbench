@@ -228,10 +228,21 @@ function renderAll(){renderTodos();renderProducts();renderHardware();renderPropo
 function openModal(html){$("#modalBox").innerHTML=html;$("#mask").hidden=false;}
 function closeModal(){$("#mask").hidden=true;}
 $("#mask").addEventListener("click",e=>{if(e.target.id==="mask")closeModal();});
-async function parseFile(f){if(/\.docx$/i.test(f.name)){if(!window.mammoth)throw new Error("mammoth 未加载（需联网）");return{html:(await mammoth.convertToHtml({arrayBuffer:await f.arrayBuffer()})).value,text:(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value};}
+async function parseFile(f){if(/\.doc$/i.test(f.name)){const t=extractDocText(await f.arrayBuffer());if(!t)throw new Error("未能从 .doc 提取到文本，请在 Word 中另存为 .docx 后上传");return{html:esc(t).replace(/\r?\n/g,"<br>"),text:t};}
+ if(/\.docx$/i.test(f.name)){if(!window.mammoth)throw new Error("mammoth 未加载（需联网）");return{html:(await mammoth.convertToHtml({arrayBuffer:await f.arrayBuffer()})).value,text:(await mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()})).value};}
  if(/\.pdf$/i.test(f.name)){if(!window.pdfjsLib)throw new Error("PDF 解析组件未加载（需联网）");pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";const doc=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let text="";for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const c=await pg.getTextContent();text+=c.items.map(it=>it.str).join("")+"\n";}return{html:esc(text).replace(/\r?\n/g,"<br>"),text};}
  if(/\.(xlsx|xls|csv)$/i.test(f.name)){if(!window.XLSX)throw new Error("Excel 解析组件未加载（需联网）");const wb=XLSX.read(await f.arrayBuffer(),{type:"array"});const text=wb.SheetNames.map(n=>"【工作表："+n+"】\n"+XLSX.utils.sheet_to_txt(wb.Sheets[n])).join("\n");return{html:esc(text).replace(/\r?\n/g,"<br>"),text};}
  const t=await f.text();return{html:esc(t).replace(/\r?\n/g,"<br>"),text:t};}
+ /* 旧版 .doc 二进制格式尽力提取文本：UTF-16LE/GBK 双解码+启发式评分取优 */
+ function extractDocText(buf){
+  const RUN=/[一-鿿A-Za-z0-9][一-鿿A-Za-z0-9，。、；：！？（）()《》【】“”‘’·—…%.,:;!?\/-]{5,}/g;
+  const score=s=>{const p=s.match(/[，。、；：！？（）《》]/g),c=s.match(/[的了是在为和与及年月日校学项目建实训设教学培训]/g);return (p?p.length:0)*3+(c?c.length:0);};
+  let best="",bestScore=0;
+  for(const enc of ["utf-16le","gbk"]){let s;try{s=new TextDecoder(enc).decode(buf);}catch(e){continue;}
+   const runs=(s.match(RUN)||[]).filter(r=>/[一-鿿]{2,}/.test(r)||/[A-Za-z]{4,}/.test(r));
+   const text=runs.join("\n");const sc=score(text);if(sc>bestScore){bestScore=sc;best=text;}}
+  return best.split("\n").map(l=>l.trim()).filter(l=>l.length>=6).join("\n");
+ }
 function bindFileRich(btnId,inputId,rteId){$("#"+btnId).onclick=()=>$("#"+inputId).click();
  $("#"+inputId).onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const r=await parseFile(f);$("#"+rteId).innerHTML+=r.html;toast("文件内容已导入（保留表格等原格式）");}catch(err){alert("解析失败："+err.message);}e.target.value="";};}
 function bindFile(btnId,inputId,taId){$("#"+btnId).onclick=()=>$("#"+inputId).click();
@@ -245,8 +256,8 @@ function libForm(id){
  <div class="field"><label>产品名称 *</label><input id="mName" value="${esc(p.name)}"></div>
  <div class="field"><label>领域/类别（可多选）</label><div class="chklist">${CATS.map(c=>`<label class="chk"><input type="checkbox" class="mcat" value="${c}" ${catSel.has(c)?"checked":""}><span class="n">${c}</span></label>`).join("")}<label class="chk"><input type="checkbox" id="mCatOther" ${otherCats.length?"checked":""}><span class="n">其他</span></label></div><input id="mCatCustom" placeholder="自定义类别，多个用、分隔" value="${esc(otherCats.join("、"))}" style="${otherCats.length?"":"display:none;"}margin-top:6px"></div>
  <div class="field"><label>参考报价</label><input id="mPrice" value="${esc(p.price)}" placeholder="如：28万/套"></div>
- <div class="field"><label>核心参数（20000 字以内，上传 Word 保留表格原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 txt/md/docx 导入</button><input type="file" id="mFile1" accept=".txt,.md,.docx" hidden></label><div class="rte" id="mParams" contenteditable="true">${paramsHtml}</div><div style="font-size:11px;color:#6b7280;margin-top:4px">当前 <span id="mCnt">0</span> / 20000 字</div></div>
- <div class="field"><label>卖点　<button class="btn btn-sm" type="button" id="mUp2">📎 上传 txt/md/docx 填入</button><input type="file" id="mFile2" accept=".txt,.md,.docx" hidden></label><textarea id="mPoints">${esc(p.points)}</textarea></div>
+ <div class="field"><label>核心参数（20000 字以内，上传 Word 保留表格原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/txt 导入</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.doc" hidden></label><div class="rte" id="mParams" contenteditable="true">${paramsHtml}</div><div style="font-size:11px;color:#6b7280;margin-top:4px">当前 <span id="mCnt">0</span> / 20000 字</div></div>
+ <div class="field"><label>卖点　<button class="btn btn-sm" type="button" id="mUp2">📎 上传 Word/txt 填入</button><input type="file" id="mFile2" accept=".txt,.md,.docx,.doc" hidden></label><textarea id="mPoints">${esc(p.points)}</textarea></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  const cnt=()=>{$("#mCnt").textContent=$("#mParams").innerText.length;};cnt();
  $("#mParams").addEventListener("input",cnt);
@@ -348,7 +359,7 @@ function proposalForm(id){
  <div class="field"><label>客户学校</label><input id="mClient" value="${esc(p.client)}"></div>
  <div class="field"><label>年份</label><input id="mYear" value="${esc(p.year)}"></div>
  <div class="field"><label>要点</label><textarea id="mKeys">${esc(p.keypoints)}</textarea></div>
- <div class="field"><label>可复用内容（正文摘录，上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/PDF/Excel/txt（自动识别标题/类型/客户学校，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.pdf,.xlsx,.xls,.csv" hidden></label><div class="rte" id="mContent" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.content)?p.content:esc(p.content).replace(/\r?\n/g,"<br>")}</div></div>
+ <div class="field"><label>可复用内容（正文摘录，上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/PDF/Excel/txt（自动识别标题/类型/客户学校，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.doc,.pdf,.xlsx,.xls,.csv" hidden></label><div class="rte" id="mContent" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.content)?p.content:esc(p.content).replace(/\r?\n/g,"<br>")}</div></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  $("#mUp1").onclick=()=>$("#mFile1").click();
  $("#mFile1").onchange=async e=>{const f=e.target.files[0];if(!f)return;
@@ -373,7 +384,7 @@ function policyForm(id){
  <div class="field"><label>发文单位</label><input id="mOrg" value="${esc(p.org)}"></div>
  <div class="field"><label>时间</label><input id="mDate" value="${esc(p.date)}" placeholder="如：2021-12"></div>
  <div class="field"><label>关键词</label><input id="mKeys" value="${esc(p.keywords)}" placeholder="逗号分隔"></div>
- <div class="field"><label>正文内容（上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/PDF/Excel/txt（自动识别名称/单位/时间/关键词，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.pdf,.xlsx,.xls,.csv" hidden></label><div class="rte" id="mSum" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.summary)?p.summary:esc(p.summary).replace(/\r?\n/g,"<br>")}</div></div>
+ <div class="field"><label>正文内容（上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/PDF/Excel/txt（自动识别名称/单位/时间/关键词，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.doc,.pdf,.xlsx,.xls,.csv" hidden></label><div class="rte" id="mSum" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.summary)?p.summary:esc(p.summary).replace(/\r?\n/g,"<br>")}</div></div>
  <div class="field"><label>适用场景</label><input id="mUse" value="${esc(p.usage)}" placeholder="如：建设背景引用"></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  $("#mUp1").onclick=()=>$("#mFile1").click();
