@@ -500,7 +500,7 @@ $("#btnTestModel").onclick=async()=>{
 function parseWan(s){const m=String(s||"").match(/(\d+(?:\.\d+)?)\s*万/);if(m)return parseFloat(m[1]);const m2=String(s||"").replace(/[,，]/g,"").match(/(\d{4,7})(?!\d)/);return m2?Math.round(parseInt(m2,10)/10000):0;}
 function wrapName(n){return /[《〈]/.test(n)?n:"《"+n+"》";}
 function fmtSpecText(f){if(!f)return "";const L=FMT_ELS.map(([k,l])=>{const s=f.styles[k]||{};return `${l}：${s.font} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}字符 行距${s.line} 段前段后${s.space||0}pt`;});return `结构格式：\n${f.structure||""}\n各级格式：${L.join("；")}`;}
-function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,skills,fmt,tplText){
+function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,skills,fmt,tplText,budget){
  const rules=["使用正式书面语，标题层级用“一、/（一）/1./（1）/①”五级；",
  "“建设背景与政策依据”部分必须逐条引用用户勾选的政策（含文件名与文号），不得编造任何政策文件名或文号；",
  "“建设内容”部分必须逐款融入用户勾选的产品（名称、核心参数、卖点），参数不得夸大或虚构；",
@@ -515,6 +515,7 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
  if(words.total||words.chapter||words.max)rules.push(`字数要求：全文不少于 ${words.total} 字${words.max?`，且全文不超过 ${words.max} 字（请在该上限内合理分配各章节篇幅）`:""}，且“一、/二、…”每个章节不少于 ${words.chapter} 字，论证充分展开；`);
  if(hw.length)rules.push("用户勾选了硬件配置，须在“建设内容”中单列硬件小节（设备名称/型号规格/单位/单价/数量/金额），并纳入预算明细；");
  if(funds.length)rules.push(`项目资金来源为：${funds.join("、")}；须在预算章节说明资金构成与使用管理；`);
+ if(budget)rules.push(`用户设定项目整体预算为 ${budget} 万元，即产品/硬件等综合费用上限：预算章节表述的投资额不得超过该上限；若勾选产品与硬件的参考报价合计超过上限，须表述为“分期建设、按需配置，本期投入控制在 ${budget} 万元以内”，不得编造对不上的分项数字；`);
  if(fmt)rules.push(`文档格式须符合「${fmt.name}」：${fmtSpecText(fmt).replace(/\n/g," ")}`);
  skills.forEach(k=>{if(k&&k.prompt)rules.push(`技能要求（${k.name}）：${k.prompt}`);});
  rules.push("直接输出正文，不要输出任何解释性语言。");
@@ -545,7 +546,7 @@ async function streamChat(messages,onChunk){
   let i;while((i=buf.indexOf("\n"))>=0){const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(line.startsWith("data:"))handle(line.slice(5).trim());}}
  if(!emitted){try{const j=JSON.parse(raw);const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content||"";if(t)onChunk(t);}catch(e){if(!raw.trim())throw new Error("接口无返回内容");}}
 }
-function localDraft(project,school,type,prods,hw,pols,words,funds){
+function localDraft(project,school,type,prods,hw,pols,words,funds,budget){
  const d=new Date(),ds=`${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;const L=[];
  L.push(`${wrapName(project)}${type}（初稿框架）`);
  L.push(`编制单位：浙江精创教育科技有限公司　编制日期：${ds}`);L.push("");
@@ -559,7 +560,7 @@ function localDraft(project,school,type,prods,hw,pols,words,funds){
  else L.push("（未勾选产品）");
  if(hw.length){L.push("硬件配置：");hw.forEach((p,i)=>L.push(`${i+1}. ${p.name}｜型号：${p.model}｜单位：${p.unit}｜单价：${p.price}万｜数量：${p.qty}｜金额：${p.amount}万`));}
  L.push("");L.push("四、资金预算与用途");
- L.push(...budgetTableText(prods,hw).split("\n").filter(Boolean));
+ L.push(...budgetTableText(prods,hw,budget).split("\n").filter(Boolean));
  if(funds.length)L.push(`资金来源：${funds.join("、")}。`);
  L.push("");L.push("五、组织实施与进度安排");
  L.push("按“方案论证→采购招标→部署调试→试运行”四阶段推进，明确月份与责任人。");
@@ -573,17 +574,19 @@ function localDraft(project,school,type,prods,hw,pols,words,funds){
 }
 /* 文末附件章节：所选产品核心参数按表格原样呈现 */
 /* 项目预算明细表：根据勾选产品+硬件程序化生成（明细+合计） */
-function budgetTableText(prods,hw){
+function budgetTableText(prods,hw,budget){
  if(!prods.length&&!hw.length)return "";
  const rows=[];let i=1,total=0;
  prods.forEach(p=>{const pr=parseWan(p.price);rows.push(`| ${i++} | ${p.name} | 软件平台 | 套 | ${pr||"—"} | 1 | ${pr||"—"} | 软件产品，含部署与培训 |`);total+=pr||0;});
  hw.forEach(h=>{const a=parseFloat(h.amount)||0;rows.push(`| ${i++} | ${h.name} | ${h.model} | ${h.unit} | ${h.price} | ${h.qty} | ${a} | 硬件设备 |`);total+=a;});
  total=Math.round(total*100)/100;
- return ["","表1 项目预算明细表（单位：万元）","| 序号 | 项目名称 | 型号规格 | 单位 | 单价 | 数量 | 金额 | 备注 |",...rows,`| 合计 | — | — | — | — | — | ${total} | 合计等于分项之和，最终以正式报价为准 |`,""].join("\n");
+ const note=budget?`注：用户设定整体预算上限 ${budget} 万元；上表参考合计 ${total} 万元，${total>budget?"已超上限，请按正文表述调整选配或分期实施":"在上限范围内"}。`:"";
+ return ["","表1 项目预算明细表（单位：万元）","| 序号 | 项目名称 | 型号规格 | 单位 | 单价 | 数量 | 金额 | 备注 |",...rows,`| 合计 | — | — | — | — | — | ${total} | 合计等于分项之和，最终以正式报价为准 |`,note,""]
+.join("\n");
 }
 /* 将预算明细表插入预算章节标题后；找不到章节则放在附件前/文末 */
-function insertBudgetTable(text,prods,hw){
- const tbl=budgetTableText(prods,hw);if(!tbl)return text;
+function insertBudgetTable(text,prods,hw,budget){
+ const tbl=budgetTableText(prods,hw,budget);if(!tbl)return text;
  const lines=text.split(/\r?\n/);
  let idx=lines.findIndex(l=>/^[一二三四五六七八九十]+、/.test(l)&&/资金预算|预算与用途|经费预算|预算明细/.test(l));
  if(idx<0)idx=lines.findIndex(l=>/^[一二三四五六七八九十]+、/.test(l)&&/预算/.test(l));
@@ -625,6 +628,7 @@ function gatherGen(){
   school:$("#fSchool").value.trim()||"（学校待补充）",
   major:$("#fMajor").value.trim(),
   type:$("#fType").value,
+  budget:parseFloat($("#fBudget").value)||0,
   tpls:$$(".gtpl").filter(c=>c.checked).map(c=>db.proposals.find(p=>p.id===c.value)).filter(Boolean),
   prods:$$(".gp").filter(c=>c.checked).map(c=>db.products.find(p=>p.id===c.value)).filter(Boolean),
   hw:$$(".ghw").filter(c=>c.checked).map(c=>{const rec=db.hardware.find(p=>p.id===c.value);if(!rec)return null;const el=document.querySelector(`input[data-hwq="${c.value}"]`);const q=Math.max(1,parseFloat(el&&el.value)||1);return{...rec,qty:q,amount:Math.round((parseFloat(rec.price)||0)*q*100)/100};}).filter(Boolean),
@@ -637,10 +641,12 @@ function gatherGen(){
 }
 $("#btnGen").onclick=async()=>{
  const g=gatherGen();const ta=$("#genResult");
- if(!db.llm.key){ta.value=localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds);toast("未配置 API Key，已用本地模板拼装框架");return;}
+ const totSel=Math.round((g.prods.reduce((s,p)=>s+parseWan(p.price),0)+g.hw.reduce((s,h)=>s+(parseFloat(h.amount)||0),0))*100)/100;
+ if(g.budget&&totSel>g.budget)toast(`⚠ 勾选产品+硬件参考合计 ${totSel} 万元，超过整体预算 ${g.budget} 万元；预算章节将按“分期实施”表述`);
+ if(!db.llm.key){ta.value=localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget);toast("未配置 API Key，已用本地模板拼装框架");return;}
  const btn=$("#btnGen");btn.disabled=true;btn.textContent="⏳ 生成中…";ta.value="";
- try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText),t=>{ta.value+=t;ta.scrollTop=ta.scrollHeight;});
-  ta.value=insertBudgetTable(ta.value,g.prods,g.hw);ta.value=attachAppendix(ta.value,g.prods);updateChecklist();toast("生成完成（结构跟随模版，已自动插入预算明细表与产品参数附件）");}
+ try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText,g.budget),t=>{ta.value+=t;ta.scrollTop=ta.scrollHeight;});
+  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);updateChecklist();toast("生成完成（结构跟随模版，已自动插入预算明细表与产品参数附件）");}
  catch(err){ta.value+=(ta.value?"\n\n":"")+"【生成失败】"+err.message+"\n请检查 API Key / 接口地址 / 模型名称；或清空 Key 后使用本地模板拼装。";}
  finally{btn.disabled=false;btn.textContent="⚡ 生成初稿";}
 };
