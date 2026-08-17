@@ -37,6 +37,8 @@ function normStyle(st){
  return st;
 }
 function lineText(st){if(!st)return"";normStyle(st);return st.lineUnit==="pt"?`固定${st.lineVal}磅`:`${st.lineVal}倍`;}
+/* 行文连贯处理：去掉全文空行（不影响表格/目录解析），保证段落之间不空行 */
+function compactText(t){return String(t||"").split(/\r?\n/).filter(l=>l.trim()).join("\n");}
 
 /* ---------- 数据与预置 ---------- */
 const LS="sbw_v1";
@@ -184,11 +186,11 @@ function renderPolicies(){
 }
 function renderFormats(){
  $("#fmtCnt").textContent=`共 ${db.formats.length} 套`;
- $("#fmtGrid").innerHTML=db.formats.map(f=>{const st=f.styles||{};const b=st.body||{},h=st.h1||{};
+ $("#fmtGrid").innerHTML=db.formats.map(f=>{const st=f.styles||{};const b=st.body,h=st.h1;
   return `<div class="card item">
   <div class="head"><b>${esc(f.name)}</b><span class="tag">格式</span></div>
-  <div class="row"><span class="k">一级标题：</span>${esc(h.font||"")} ${esc(h.size||"")}${h.bold?" 加粗":""}</div>
-   <div class="row"><span class="k">正文：</span>${esc(b.font||"")} ${esc(b.size||"")} · ${esc(lineText(b))} · ${esc(b.align||"")}</div>
+  <div class="row"><span class="k">一级标题：</span>${h?esc(h.font||"")+" "+esc(h.size||"")+(h.bold?" 加粗":""):"未配置"}</div>
+   <div class="row"><span class="k">正文：</span>${b?esc(b.font||"")+" "+esc(b.size||"")+" · "+esc(lineText(b))+" · "+esc(b.align||""):"未配置"}</div>
   <div class="row" style="white-space:pre-line;color:#6b7280;font-size:12px">${esc((f.structure||"").split("\n").slice(0,3).join("\n"))}…</div>
   <div class="acts"><button class="btn btn-sm" data-act="edit" data-kind="format" data-id="${f.id}">✎ 编辑</button>
   <button class="btn btn-sm btn-danger" data-act="del" data-kind="format" data-id="${f.id}">🗑 删除</button></div></div>`;}).join("")||EMPTY;
@@ -343,18 +345,25 @@ function fmtRow(key,label,st){
  <input type="checkbox" id="fs_${key}_bold" ${st.bold?"checked":""} title="加粗"></div>`;
 }
 function formatForm(id){
- const f=id?db.formats.find(x=>x.id===id):{name:"",structure:STRUCT_DEF,styles:defStyles()};
- const st=f.styles||defStyles();
+ const f=id?db.formats.find(x=>x.id===id):{name:"",structure:STRUCT_DEF,styles:{}};
+ const st=f.styles||{};
+ /* 新增时默认不勾选任何对象，由用户手动选择要配置的对象；编辑时回显已配置项 */
+ const checked=id?FMT_ELS.map(([k])=>k).filter(k=>st[k]):[];
  openModal(`<h3>${id?"编辑":"新增"}格式</h3>
  <div class="field"><label>格式名称 *</label><input id="mName" value="${esc(f.name)}" placeholder="如：标准公文格式（三号仿宋）"></div>
+ <div class="field"><label>需要配置的对象（手动勾选；未勾选的对象生成/导出时不套用此格式，可后续编辑时再添加）</label>
+ <div class="chklist">${FMT_ELS.map(([k,l])=>`<label class="chk"><input type="checkbox" class="mfel" value="${k}" ${checked.includes(k)?"checked":""}><span class="n">${l}</span></label>`).join("")}</div></div>
  <div class="field"><label>结构格式（标题层级）</label><textarea id="mStruct" style="min-height:110px">${esc(f.structure||STRUCT_DEF)}</textarea></div>
- <div class="field"><label>各级元素格式（字体 / 数字英文字体 / 字号 / 对齐 / 行距单位+数值 / 首行缩进 / 段前 / 段后 / 加粗）</label>
+ <div class="field"><label>所选对象的格式（字体 / 数字英文字体 / 字号 / 对齐 / 行距单位+数值 / 首行缩进 / 段前 / 段后 / 加粗）</label>
  <div class="fmt-head"><span>元素</span><span>字体</span><span>数字英文</span><span>字号</span><span>对齐</span><span>行距单位</span><span>行距值</span><span>缩进</span><span>段前pt</span><span>段后pt</span><span>加粗</span></div>
- ${FMT_ELS.map(([k,l])=>fmtRow(k,l,st[k]||defStyles()[k])).join("")}</div>
+ ${FMT_ELS.map(([k,l])=>`<div class="fmtelwrap" data-el="${k}" style="${checked.includes(k)?"":"display:none"}">${fmtRow(k,l,st[k]||defStyles()[k])}</div>`).join("")}</div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
+ $$(".mfel").forEach(cb=>cb.onchange=()=>{const w=document.querySelector(`.fmtelwrap[data-el="${cb.value}"]`);if(w)w.style.display=cb.checked?"":"none";});
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写格式名称");return;}
-  const styles={};FMT_ELS.forEach(([k])=>{const latin=$(`#fs_${k}_latin`).value;styles[k]=normStyle({font:$(`#fs_${k}_font`).value,latin:latin==="同中文字体"?"":latin,size:$(`#fs_${k}_size`).value,align:$(`#fs_${k}_align`).value,lineUnit:$(`#fs_${k}_lineUnit`).value,lineVal:parseFloat($(`#fs_${k}_lineVal`).value)||1,indent:parseInt($(`#fs_${k}_indent`).value,10)||0,spaceBefore:parseInt($(`#fs_${k}_spaceBefore`).value,10)||0,spaceAfter:parseInt($(`#fs_${k}_spaceAfter`).value,10)||0,bold:$(`#fs_${k}_bold`).checked?1:0});});
+  const sel=$$(".mfel").filter(c=>c.checked).map(c=>c.value);
+  if(!sel.length){alert("请至少勾选一个要配置的对象（如一级标题、正文等）");return;}
+  const styles={};sel.forEach(k=>{const latin=$(`#fs_${k}_latin`).value;styles[k]=normStyle({font:$(`#fs_${k}_font`).value,latin:latin==="同中文字体"?"":latin,size:$(`#fs_${k}_size`).value,align:$(`#fs_${k}_align`).value,lineUnit:$(`#fs_${k}_lineUnit`).value,lineVal:parseFloat($(`#fs_${k}_lineVal`).value)||1,indent:parseInt($(`#fs_${k}_indent`).value,10)||0,spaceBefore:parseInt($(`#fs_${k}_spaceBefore`).value,10)||0,spaceAfter:parseInt($(`#fs_${k}_spaceAfter`).value,10)||0,bold:$(`#fs_${k}_bold`).checked?1:0});});
   const data={name,structure:$("#mStruct").value,styles};
   if(id)Object.assign(f,data);else db.formats.push({id:uid(),...data});
   if(!persist())return;closeModal();renderAll();toast("已保存，可在生成台套用");};
@@ -541,7 +550,7 @@ $("#btnTestModel").onclick=async()=>{
 /* ---------- 生成：提示词 + 流式调用 + 本地模板 ---------- */
 function parseWan(s){const m=String(s||"").match(/(\d+(?:\.\d+)?)\s*万/);if(m)return parseFloat(m[1]);const m2=String(s||"").replace(/[,，]/g,"").match(/(\d{4,7})(?!\d)/);return m2?Math.round(parseInt(m2,10)/10000):0;}
 function wrapName(n){return /[《〈]/.test(n)?n:"《"+n+"》";}
-function fmtSpecText(f){if(!f)return "";const L=FMT_ELS.map(([k,l])=>{const s=normStyle(f.styles[k])||{};return `${l}：${s.font}${s.latin?`（数字英文用${s.latin}）`:""} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}字符 行距${lineText(s)} 段前${s.spaceBefore||0}pt 段后${s.spaceAfter||0}pt`;});return `结构格式：\n${f.structure||""}\n各级格式：${L.join("；")}`;}
+function fmtSpecText(f){if(!f)return"";const L=FMT_ELS.map(([k,l])=>{const s=f.styles&&f.styles[k]?normStyle(f.styles[k]):null;if(!s)return"";return `${l}：${s.font}${s.latin?`（数字英文用${s.latin}）`:""} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}字符 行距${lineText(s)} 段前${s.spaceBefore||0}pt 段后${s.spaceAfter||0}pt`;}).filter(Boolean);return `结构格式：\n${f.structure||""}${L.length?`\n各级格式：${L.join("；")}`:""}`;}
 function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,skills,fmt,tplText,budget){
  const rules=["使用正式书面语，标题层级用“一、/（一）/1./（1）/①”五级；",
  "政策依据必须自然融入行文：把用户勾选政策的要点有机编织进“建设背景与政策依据”等相关章节的论述中，在段落行文内顺势引用政策名称与文号（如“根据《××》（×发〔20××〕×号）关于……的要求，本项目……”），让政策精神与项目论证浑然一体；严禁采用“政策一：……；政策二：……”的清单式罗列，严禁单独设立仅逐条列举政策名称与要点的段落，不得编造任何政策文件名或文号；",
@@ -562,7 +571,7 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
  if(budget)rules.push(`用户设定项目整体预算为 ${budget} 万元，即产品/硬件等综合费用上限：预算章节表述的投资额不得超过该上限；若勾选产品与硬件的参考报价合计超过上限，须表述为“分期建设、按需配置，本期投入控制在 ${budget} 万元以内”，不得编造对不上的分项数字；`);
  if(fmt)rules.push(`文档格式须符合「${fmt.name}」：${fmtSpecText(fmt).replace(/\n/g," ")}`);
  skills.forEach(k=>{if(k&&k.prompt)rules.push(`技能要求（${k.name}）：${k.prompt}`);});
- rules.push("直接输出正文，不要输出任何解释性语言。");
+ rules.push("直接输出正文，不要输出任何解释性语言；全文不得输出空行：标题与段落之间直接换行紧密衔接，保证行文连贯。");
  const sys=`你是高校商科实训实验室建设领域的资深方案撰写专家，服务于软件供应商浙江精创教育科技有限公司，长期为高校撰写${type}。写作要求：\n`+rules.map((r,i)=>`${i+1}. ${r}`).join("\n");
  let user=`请为以下项目撰写一份完整的${type}初稿：
 【项目名称】${project}
@@ -682,7 +691,7 @@ function insertToc(text){
 }
 /* Word 导出用 TOC 域：正文一/二级标题为 h2/h3（Word 标题2/3），域 \o "2-3" 收集，\h 支持点击跳转；打开后右键“更新域”生成带页码目录 */
 function wordTocField(fmt){
- const headCss=fmt?cssFor(fmt.styles.tbTitle):"font-size:16pt;font-weight:bold";
+ const headCss=fmt&&fmt.styles.tbTitle?cssFor(fmt.styles.tbTitle):"font-size:16pt;font-weight:bold";
  return `<p style="text-align:center;${headCss}">目　录</p><p><span style='mso-element:field-begin'></span><span style='mso-hide:all'>TOC \\o "2-3" \\h \\z \\u</span><span style='mso-element:field-separator'></span><span style="color:#666">目录将自动生成：请在 Word 中右键此处选择“更新域”，即可得到带页码的目录，按住 Ctrl 点击目录条目可跳转对应章节。</span><span style='mso-element:field-end'></span></p><br>`;
 }
 function html2mdLines(html){
@@ -725,13 +734,13 @@ $("#btnGen").onclick=async()=>{
  const g=gatherGen();const ta=$("#genResult");
  const totSel=Math.round((g.prods.reduce((s,p)=>s+parseWan(p.price),0)+g.hw.reduce((s,h)=>s+(parseFloat(h.amount)||0),0))*100)/100;
  if(g.budget&&totSel>g.budget)toast(`⚠ 勾选产品+硬件参考合计 ${totSel} 万元，超过整体预算 ${g.budget} 万元；预算章节将按“分期实施”表述`);
- if(!db.llm.key){ta.value=insertToc(localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget));syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);toast("未配置 API Key，已用本地模板拼装框架");return;}
+ if(!db.llm.key){ta.value=compactText(insertToc(localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget)));syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);toast("未配置 API Key，已用本地模板拼装框架");return;}
  const btn=$("#btnGen");const ac=new AbortController();genAbort=ac;btn.textContent="⏳ 连接模型中…（可点击取消）";ta.value="";
  let chars=0,got=false;const t0=Date.now();
  const tick=setInterval(()=>{const s=Math.round((Date.now()-t0)/1000);btn.textContent=`⏳ ${got?"生成中":"等待模型响应"}… ${s}s${chars?` · 已收 ${chars} 字`:""}（可点击取消）`;},500);
  const firstTo=setTimeout(()=>{if(!got)ac.abort();},120000);
  try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText,g.budget),t=>{got=true;chars+=t.length;ta.value+=t;ta.scrollTop=ta.scrollHeight;},ac.signal);
-  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);ta.value=insertToc(ta.value);updateChecklist();syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);
+  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);ta.value=compactText(insertToc(ta.value));updateChecklist();syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);
   const cnt=ta.value.replace(/\s+/g,"").length;
   toast(`生成完成，全文约 ${cnt} 字，用时 ${Math.round((Date.now()-t0)/1000)}s`+(g.words.total&&cnt<g.words.total?`；⚠ 未达最低字数要求 ${g.words.total} 字，建议重新生成或在修订对话框中要求扩写`:"（已自动插入目录、预算明细表与产品参数附件）"));}
  catch(err){if(err.name==="AbortError"){ta.value+=(ta.value?"\n\n":"")+"【已取消或超时】"+(got?"已停止生成，上方已接收的内容仍可使用。":"2 分钟内未收到模型响应：多为模型服务繁忙（可稍后重试），或接口不支持流式输出/模型名称有误。");}
@@ -901,12 +910,43 @@ async function genZhiwenPpt(query,outlineText,onStatus){
  throw new Error("生成超时（>10 分钟），请稍后重试");
 }
 /* ---------- 终稿机制与 PPT 内容来源（初稿→修订→终稿→PPT） ---------- */
-function syncFinalUi(){const el=$("#finalStatus");if(el)el.textContent=db.final&&db.final.text?"✅ 终稿已确认："+new Date(db.final.time).toLocaleString():"";}
-$("#btnFinalSave").onclick=()=>{const t=$("#genResult").value.trim();if(!t){alert("生成结果栏还没有内容：请先生成初稿并完成修订");return;}db.final={text:t,time:Date.now()};persist();syncFinalUi();refreshPptOutline(true);toast("终稿已确认：导出终稿 Word 与 PPT 生成都将以此版本为准");};
+function syncFinalUi(){const el=$("#finalStatus");if(el)el.textContent=db.final&&db.final.text?"✅ 终稿已形成："+new Date(db.final.time).toLocaleString():"";}
+/* 形成终稿：若修订对话框有待补充信息/新要求且已配置大模型，则调用大模型把修订内容自动填入初稿对应位置形成终稿；
+   未配置 Key 或对话框无输入时，直接把当前内容确认为终稿 */
+$("#btnFinalSave").onclick=async()=>{
+ const t=$("#genResult").value.trim();if(!t){alert("生成结果栏还没有内容：请先生成初稿并完成修订");return;}
+ const userTurns=chatHist.filter(m=>m.role==="user").map(m=>m.content).join("\n\n").trim();
+ if(!db.llm.key||!userTurns){db.final={text:t,time:Date.now()};persist();syncFinalUi();refreshPptOutline(true);toast(db.llm.key?"修订对话框暂无输入：已直接将当前内容确认为终稿":"未填写 API Key：已直接将当前内容确认为终稿（填写 Key 后可自动合并修订内容）");return;}
+ const btn=$("#btnFinalSave");btn.disabled=true;btn.textContent="⏳ 正在形成终稿…";
+ const t0=Date.now();
+ const sys=`你是“申报方案工作台”的终稿形成助手，服务于浙江精创教育科技有限公司。
+下面是方案初稿：
+"""
+${$("#genResult").value.slice(0,20000)}
+"""
+下面是用户在修订对话框中的发言（含待补充信息与新的修订要求）：
+"""
+${userTurns.slice(0,8000)}
+"""
+任务要求：
+1. 将用户补充的信息准确填写进初稿中对应的章节位置，替换“（待核实…）”“（待补充…）”等占位内容；
+2. 逐条满足用户提出的其他修订要求；
+3. 保持初稿的章节结构、标题编号样式、预算明细表、附件内容与各类表格不变，不得删减章节与数据；
+4. 不输出目录区域（系统会自动生成），不输出任何解释性语言，直接输出终稿全文；全文不得输出空行。`;
+ let out="";
+ try{await streamChat([{role:"system",content:sys},{role:"user",content:"请输出形成后的终稿全文。"}],c=>{out+=c;btn.textContent=`⏳ 正在形成终稿… 已收 ${out.length} 字`;});
+  if(!out.trim())throw new Error("模型未返回内容");
+  out=compactText(insertToc(out));
+  $("#genResult").value=out;updateChecklist();
+  db.final={text:out,time:Date.now()};persist();syncFinalUi();refreshPptOutline(true);
+  toast(`终稿已形成（用时 ${Math.round((Date.now()-t0)/1000)}s）：修订内容已自动填入初稿对应位置，生成结果栏已更新，可继续微调后再次形成终稿`);
+ }catch(err){alert("形成终稿失败："+err.message+"。当前内容未变更，可重试，或直接再次点击按钮把当前内容确认为终稿后手动调整。");}
+ finally{btn.disabled=false;btn.textContent="✅ 形成终稿";}
+};
 /* PPT 内容来源：优先终稿，未确认终稿时退回当前生成结果 */
 function pptSrcText(){return(db.final&&db.final.text)||$("#genResult").value||"";}
 function syncPptSrcStatus(){const el=$("#pptSrcStatus");if(!el)return;
- el.textContent=db.final&&db.final.text?`内容来源：修订后确认的终稿（${new Date(db.final.time).toLocaleString()} 确认）`:`内容来源：当前生成结果（尚未确认终稿：建议修订完成后点「✅ 确认终稿」再生成 PPT）`;}
+ el.textContent=db.final&&db.final.text?`内容来源：修订后形成的终稿（${new Date(db.final.time).toLocaleString()} 形成）`:`内容来源：当前生成结果（尚未形成终稿：建议在修订对话框填入待补充信息后点「✅ 形成终稿」）`;}
 let pptLastSrc="";
 function refreshPptOutline(force){const src=pptSrcText();syncPptSrcStatus();if(!src.trim())return;
  if(force||src!==pptLastSrc||!$("#pptOutline").value.trim()){$("#pptOutline").value=extractPptOutline(src,$("#fProject").value.trim()||"方案汇报");pptLastSrc=src;}}
@@ -942,7 +982,7 @@ $("#btnPptRun").onclick=async()=>{
    const miss=[!db.ppt.zwAppId&&"APPID",!db.ppt.zwApiKey&&"APIKey",!db.ppt.zwApiSecret&&"APISecret"].filter(Boolean);
    if(miss.length){st.textContent="⚠ 讯飞智文凭据未填写完整，缺少："+miss.join("、")+"。请在上方「讯飞智文配置」中补齐后再点生成（或改用本地引擎）。";return;}
    const src=pptSrcText();
-   const query=`请基于以下方案文档生成汇报 PPT，项目：${$("#fProject").value.trim()||"方案"}。${db.final&&db.final.text?"内容为修订后确认的终稿。":""}方案内容摘要：${src.slice(0,3000)}`;
+   const query=`请基于以下方案文档生成汇报 PPT，项目：${$("#fProject").value.trim()||"方案"}。${db.final&&db.final.text?"内容为修订后形成的终稿。":""}方案内容摘要：${src.slice(0,3000)}`;
    const url=await genZhiwenPpt(query,outline,m=>st.textContent=m);
    const a=$("#pptDownload");a.href=url;a.target="_blank";$("#pptResult").hidden=false;st.textContent="生成完成，点击右侧按钮下载";
   }else{
@@ -991,11 +1031,11 @@ $("#btnChatWord").onclick=()=>{
  /* 仅导出终稿 Word：不再提供对话记录导出 */
  const isFinal=!!(db.final&&db.final.text);
  const text=isFinal?db.final.text:$("#genResult").value;
- if(!text||!text.trim()){alert("暂无终稿内容：请先生成初稿、完成修订后点「✅ 确认终稿」");return;}
+ if(!text||!text.trim()){alert("暂无终稿内容：请先生成初稿、在修订对话框填入待补充信息后点「✅ 形成终稿」");return;}
  const fmt=db.formats.find(f=>f.id===$("#fFormat").value)||null;
  const title=($("#fProject").value.trim()||"方案")+"_"+$("#fType").value+"_终稿";
  exportWordDoc(text,title,fmt);
- toast(isFinal?(fmt?`已导出终稿 Word（套用格式：${fmt.name}）`:"已导出终稿 Word"):"尚未确认终稿：已按当前生成结果导出，建议修订完成后先点「✅ 确认终稿」");};
+ toast(isFinal?(fmt?`已导出终稿 Word（套用格式：${fmt.name}）`:"已导出终稿 Word"):"尚未形成终稿：已按当前生成结果导出，建议先在修订对话框填入待补充信息后点「✅ 形成终稿」");};
 
 /* ---------- 方案文库：定时自动训练 ---------- */
 db.train=db.train||{on:false,time:"09:00",freq:"daily",lastRun:0,style:"",logs:[]};
