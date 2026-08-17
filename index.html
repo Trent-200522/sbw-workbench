@@ -16,8 +16,8 @@
 body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#eef1f6;color:#1f2937;font-size:14px}
 button{font-family:inherit;cursor:pointer}
 header{position:sticky;top:0;z-index:20;background:#fff;display:flex;align-items:center;gap:12px;padding:12px 28px;border-bottom:1px solid #e5e9f0}
-.logo{width:42px;height:42px;border-radius:10px;background:#1d4fa8;display:flex;align-items:center;justify-content:center;flex:none}
-.logo svg{width:24px;height:24px;fill:#fff}
+.logo{width:42px;height:42px;border-radius:10px;overflow:hidden;flex:none}
+.logo img{width:100%;height:100%;object-fit:cover;display:block}
 header h1{font-size:18px;color:#111827}
 header .sub{color:#6b7280;font-size:12px;margin-top:2px}
 .spacer{flex:1}
@@ -146,7 +146,7 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
 </head>
 <body>
 <header>
-  <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5zm-10 9.5 10 5 10-5v-2.5l-10 5-10-5v-2.5zm0 5 10 5 10-5V19l-10 5-10-5v-2.5z"/></svg></div>
+  <div class="logo"><img src="header-logo.jpg?v=20260817h" alt="精创 logo"></div>
   <div><h1>商科实训 · 申报方案工作台</h1><div class="sub">产品 · 硬件 · 方案 · 政策 · 格式，一键成稿</div></div>
   <div class="spacer"></div>
   <button class="btn" id="btnExport">⬇ 导出备份</button>
