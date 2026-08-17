@@ -551,7 +551,7 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
   rules.push("正文章节结构必须严格跟随上传模版的章节标题与顺序（含各级标题编号样式），不得自行改用默认建议章节；");
   rules.push(tplHasAppx?"模版包含“附件”章节：正文中保留该章节标题，但不要填写具体附件内容，系统会自动在该章节下填入所选产品核心参数表格；":"模版不含“附件”章节：正文中不要自行撰写“附件”章节，系统会在文末自动追加并附上所选产品核心参数表格；");}
  else rules.push("正文中不要自行撰写“附件”章节，系统会在文末自动附上所选产品核心参数表格；");
- rules.push("附件/附表相关内容一律不得出现在正文与目录中：若文中有“目录”章节，目录只列正文章节、不包含任何附件/附表条目；附件章节与产品核心参数表格由系统在全文末尾自动追加，正文写到最后一个正文章节即结束；");
+ rules.push("不要自行输出“目录”区域：系统会自动提取正文一级（一、）与二级（（一））标题并在文首生成目录；附件/附表相关内容一律不得出现在正文中：附件章节与产品核心参数表格由系统在全文末尾自动追加，正文写到最后一个正文章节即结束；");
  if(db.train&&db.train.style&&db.train.on)rules.push(`以下写作规范由历史方案自动训练总结而来，请严格遵守：${db.train.style.slice(0,1500)}`);
  if(words.total||words.chapter||words.max)rules.push(`字数要求（硬性验收标准，必须严格执行）：全文不少于 ${words.total} 字${words.max?`，且全文不超过 ${words.max} 字（请在该上限内合理分配各章节篇幅）`:""}，且“一、/二、…”每个章节不少于 ${words.chapter} 字。请先按字数要求规划各章节篇幅再动笔，论证充分展开，用具体的建设内容、实施细节、数据与效益分析充实篇幅，严禁用空话套话或重复内容凑字数；`);
  if(hw.length)rules.push("用户勾选了硬件配置：须在“建设内容”章节单列硬件小节，并用 Markdown 表格列示（列：设备名称｜型号规格｜单位｜单价（万元）｜数量｜金额（万元）），并纳入预算明细；");
@@ -646,6 +646,39 @@ function attachAppendix(text,prods){
  lines.splice(hi+1,0,...body);
  return lines.join("\n");
 }
+/* ---------- 目录自动生成（正文内目录 + Word TOC 域） ---------- */
+const H1_RE=/^[一二三四五六七八九十]+、/,H2_RE=/^（[一二三四五六七八九十]+）/;
+function isAppxHead(t){return /附表|附件|附录/.test(t);}
+/* 从正文抽取一/二级标题；附表、附件类章节及其下级标题不纳入 */
+function extractTocEntries(text){
+ const entries=[];let skip=false;
+ for(const raw of text.split(/\r?\n/)){const l=raw.trim();if(!l)continue;
+  if(H1_RE.test(l)){skip=isAppxHead(l);if(!skip)entries.push({lv:1,t:l});continue;}
+  if(H2_RE.test(l)&&!skip)entries.push({lv:2,t:l});}
+ return entries;
+}
+/* 剥掉已有目录块（“目录”行及其后连续的标题行），避免重复插入 */
+function stripTocBlock(lines){
+ const i=lines.findIndex(l=>/^目\s*录\s*$/.test(l.trim()));if(i<0)return lines;
+ let j=i+1;while(j<lines.length&&/^(目\s*录\s*$|[一二三四五六七八九十]+、|（[一二三四五六七八九十]+）)/.test(lines[j].trim()))j++;
+ while(j<lines.length&&!lines[j].trim())j++;
+ return [...lines.slice(0,i),...lines.slice(j)];
+}
+/* 在文首（文档标题之后）插入目录区域，幂等：重复执行不会产生多份目录 */
+function insertToc(text){
+ let lines=stripTocBlock(text.split(/\r?\n/));
+ const entries=extractTocEntries(lines.join("\n"));if(!entries.length)return lines.join("\n");
+ const toc=["目录",...entries.map(e=>e.lv===1?e.t:"　　"+e.t),""];
+ const ti=lines.findIndex(l=>l.trim());if(ti<0)return lines.join("\n");
+ if(H1_RE.test(lines[ti].trim()))lines.splice(ti,0,...toc);
+ else lines.splice(ti+1,0,"",...toc);
+ return lines.join("\n");
+}
+/* Word 导出用 TOC 域：正文一/二级标题为 h2/h3（Word 标题2/3），域 \o "2-3" 收集，\h 支持点击跳转；打开后右键“更新域”生成带页码目录 */
+function wordTocField(fmt){
+ const headCss=fmt?cssFor(fmt.styles.tbTitle):"font-size:16pt;font-weight:bold";
+ return `<p style="text-align:center;${headCss}">目　录</p><p><span style='mso-element:field-begin'></span><span style='mso-hide:all'>TOC \\o "2-3" \\h \\z \\u</span><span style='mso-element:field-separator'></span><span style="color:#666">目录将自动生成：请在 Word 中右键此处选择“更新域”，即可得到带页码的目录，按住 Ctrl 点击目录条目可跳转对应章节。</span><span style='mso-element:field-end'></span></p><br>`;
+}
 function html2mdLines(html){
  const doc=new DOMParser().parseFromString(html,"text/html");const out=[];
  const walk=el=>{for(const n of el.children){const tag=n.tagName.toLowerCase();
@@ -686,15 +719,15 @@ $("#btnGen").onclick=async()=>{
  const g=gatherGen();const ta=$("#genResult");
  const totSel=Math.round((g.prods.reduce((s,p)=>s+parseWan(p.price),0)+g.hw.reduce((s,h)=>s+(parseFloat(h.amount)||0),0))*100)/100;
  if(g.budget&&totSel>g.budget)toast(`⚠ 勾选产品+硬件参考合计 ${totSel} 万元，超过整体预算 ${g.budget} 万元；预算章节将按“分期实施”表述`);
- if(!db.llm.key){ta.value=localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget);toast("未配置 API Key，已用本地模板拼装框架");return;}
+ if(!db.llm.key){ta.value=insertToc(localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget));toast("未配置 API Key，已用本地模板拼装框架");return;}
  const btn=$("#btnGen");const ac=new AbortController();genAbort=ac;btn.textContent="⏳ 连接模型中…（可点击取消）";ta.value="";
  let chars=0,got=false;const t0=Date.now();
  const tick=setInterval(()=>{const s=Math.round((Date.now()-t0)/1000);btn.textContent=`⏳ ${got?"生成中":"等待模型响应"}… ${s}s${chars?` · 已收 ${chars} 字`:""}（可点击取消）`;},500);
  const firstTo=setTimeout(()=>{if(!got)ac.abort();},120000);
  try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText,g.budget),t=>{got=true;chars+=t.length;ta.value+=t;ta.scrollTop=ta.scrollHeight;},ac.signal);
-  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);updateChecklist();
+  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);ta.value=insertToc(ta.value);updateChecklist();
   const cnt=ta.value.replace(/\s+/g,"").length;
-  toast(`生成完成，全文约 ${cnt} 字，用时 ${Math.round((Date.now()-t0)/1000)}s`+(g.words.total&&cnt<g.words.total?`；⚠ 未达最低字数要求 ${g.words.total} 字，建议重新生成或在修订对话框中要求扩写`:"（已自动插入预算明细表与产品参数附件）"));}
+  toast(`生成完成，全文约 ${cnt} 字，用时 ${Math.round((Date.now()-t0)/1000)}s`+(g.words.total&&cnt<g.words.total?`；⚠ 未达最低字数要求 ${g.words.total} 字，建议重新生成或在修订对话框中要求扩写`:"（已自动插入目录、预算明细表与产品参数附件）"));}
  catch(err){if(err.name==="AbortError"){ta.value+=(ta.value?"\n\n":"")+"【已取消或超时】"+(got?"已停止生成，上方已接收的内容仍可使用。":"2 分钟内未收到模型响应：多为模型服务繁忙（可稍后重试），或接口不支持流式输出/模型名称有误。");}
  else ta.value+=(ta.value?"\n\n":"")+"【生成失败】"+err.message+"\n请检查 API Key / 接口地址 / 模型名称；或清空 Key 后使用本地模板拼装。";}
  finally{clearInterval(tick);clearTimeout(firstTo);genAbort=null;btn.textContent="⚡ 生成初稿";}
@@ -756,7 +789,12 @@ $("#btnSaveProp").onclick=()=>{const t=$("#genResult").value.trim();if(!t){alert
 $("#btnWord").onclick=()=>{const text=$("#genResult").value;if(!text.trim()){alert("请先生成内容");return;}
  const fmt=db.formats.find(f=>f.id===$("#fFormat").value)||null;
  const title=($("#fProject").value.trim()||"方案")+"_"+$("#fType").value;
- const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(title)}</title></head><body>${md2html(text,fmt)}</body></html>`;
+ /* 纯文本目录替换为 Word TOC 域：插在文档标题之后 */
+ let bodyHtml=md2html(stripTocBlock(text.split(/\r?\n/)).join("\n"),fmt);
+ const tocField=wordTocField(fmt);
+ if(/^<h1/.test(bodyHtml)){const p=bodyHtml.indexOf("</h1>")+5;bodyHtml=bodyHtml.slice(0,p)+tocField+bodyHtml.slice(p);}
+ else bodyHtml=tocField+bodyHtml;
+ const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(title)}</title></head><body>${bodyHtml}</body></html>`;
  const blob=new Blob(["\ufeff",html],{type:"application/msword"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title+".doc";a.click();toast(fmt?`已导出 Word（套用格式：${fmt.name}）`:"已导出 Word");};
 
