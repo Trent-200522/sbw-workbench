@@ -7,6 +7,8 @@
 <script src="https://unpkg.com/mammoth@1.7.2/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blueimp-md5@2.19.0/js/md5.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;background:#eef1f6;color:#1f2937;font-size:14px}
@@ -115,6 +117,13 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
 .flagbadge.red{background:#dc2626;color:#fff}
 .flagbadge.blue{background:#2563eb;color:#fff}
 .chk.off{opacity:.55;cursor:not-allowed}
+details.gmore{margin-top:8px;border:1px dashed #d5dce6;border-radius:8px;background:#fff}
+details.gmore summary{cursor:pointer;padding:8px 12px;font-size:13px;color:#1d4fa8;list-style:none;user-select:none}
+details.gmore summary::-webkit-details-marker{display:none}
+details.gmore summary::before{content:"▸ ";transition:transform .15s;display:inline-block}
+details.gmore[open] summary::before{transform:rotate(90deg)}
+details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
+#chatInput{font-family:inherit;line-height:1.5}
 .field input:focus,.field select:focus,.field textarea:focus,#genResult:focus,#chatInput:focus,#fundOther:focus{outline:none;border-color:#1d4fa8;box-shadow:0 0 0 3px rgba(29,79,168,.12)}
 #btnGen{background:linear-gradient(135deg,#1d4fa8,#2f6bd8);border:none;font-size:15px;letter-spacing:1px}
 #btnGen:hover{background:linear-gradient(135deg,#16408c,#2557b5)}
@@ -229,9 +238,9 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
             <input id="fundOther" placeholder="请填写其他资金来源，如：专项基金 / 捐赠收入" style="display:none;margin-top:8px;width:100%;border:1px solid #d5dce6;border-radius:8px;padding:7px 10px;font-size:12px"></div>
           <div class="field" style="margin-bottom:0"><label>参考模板（可多选，来自方案文库）</label><div id="fTemplates" style="max-height:150px;overflow:auto;border:1px solid #e3e8ef;border-radius:8px;padding:8px;background:#fff"></div></div>
         </div>
-        <div class="card gcard"><h3>📦 3. 勾选参与建设的产品</h3><div id="genProducts"></div></div>
-        <div class="card gcard"><h3>🖥 4. 勾选硬件配置（可选）</h3><div id="genHardware"></div></div>
-        <div class="card gcard"><h3>🚩 5. 勾选政策依据（按专业+产品智能匹配，可自由调整）<button class="btn btn-sm" id="btnPolMatch" type="button">🔄 重新匹配</button></h3><div id="genPolicies"></div></div>
+        <div class="card gcard"><h3>📦 3. 勾选参与建设的产品 <span class="hint">已选项常显，其余收起在下方下拉</span></h3><div id="genProducts" data-kind="products"></div></div>
+        <div class="card gcard"><h3>🖥 4. 勾选硬件配置（可选）</h3><div id="genHardware" data-kind="hardware"></div></div>
+        <div class="card gcard"><h3>🚩 5. 勾选政策依据（按专业+产品智能匹配，可自由调整）<button class="btn btn-sm" id="btnPolMatch" type="button">🔄 重新匹配</button></h3><div id="genPolicies" data-kind="policies"></div></div>
         <div class="card gcard"><h3>🔢 6. 字数选择</h3>
           <div class="field"><label>整体最低字数</label><input id="fWordsTotal" type="number" min="0" step="500" value="8000"></div>
           <div class="field"><label>整体最高字数（选填，0 或留空 = 不限）</label><input id="fWordsMax" type="number" min="0" step="500" value="0"></div>
@@ -261,6 +270,21 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <button class="btn btn-primary" id="btnCopyAll">⧉ 复制全文</button>
           <button class="btn" id="btnSaveProp">💾 存入方案文库</button>
           <button class="btn" id="btnWord">📑 导出 Word</button>
+          <button class="btn" id="btnPpt">📽 生成 PPT</button>
+        </div>
+        <div id="pptPanel" class="card" hidden style="margin-top:12px;background:#f4f7fc">
+          <h3>📽 PPT 生成台 <span class="hint">基于上方生成结果自动提炼大纲，可调整引擎/主题/大纲</span></h3>
+          <div class="field"><label>生成引擎</label><select id="pptEngine"><option value="local">本地引擎（无需联网与额度，即时生成 .pptx，推荐）</option><option value="zhiwen">讯飞智文 AIPPT（需配置下方三项凭证）</option></select></div>
+          <div id="zwCfg">
+            <div class="field"><label>讯飞开放平台 APPID</label><input id="zwAppId" placeholder="在 xfyun.cn 控制台创建「智能PPT」应用后获取"></div>
+            <div class="field"><label>APIKey</label><input id="zwApiKey" placeholder="应用的 APIKey"></div>
+            <div class="field"><label>APISecret</label><input id="zwApiSecret" type="password" placeholder="应用的 APISecret（仅存本机浏览器）"></div>
+            <div class="field"><label>主题样式</label><select id="zwTheme"><option value="auto">随机主题</option><option value="purple">紫影幽蓝</option><option value="green">绿色主题</option><option value="lightblue">清逸天蓝</option><option value="taupe">质感之境</option><option value="blue">星光夜影</option><option value="telecomRed">炽热暖阳</option><option value="telecomGreen">幻翠奇旅</option></select></div>
+          </div>
+          <div class="field"><label>PPT 大纲（按“章标题 / 小节要点”自动提炼，可直接编辑调整后再生成）</label><textarea id="pptOutline" style="min-height:160px"></textarea></div>
+          <div class="gen-acts"><button class="btn btn-primary" id="btnPptRun">⚙ 开始生成 PPT</button><span id="pptStatus" class="hint"></span></div>
+          <div id="pptResult" hidden style="margin-top:10px"><a id="pptDownload" class="btn btn-primary" download>⬇ 下载 PPT</a> <span class="hint">生成后可再次编辑大纲重新生成，直至满意</span></div>
+          <div class="llm-note">本地引擎完全离线、免费；讯飞智文按点量计费（约 10 点/次）。注意：讯飞接口为服务端设计，若浏览器调用被跨域（CORS）拦截，请改用本地引擎。</div>
         </div>
         <h3 style="margin-top:18px">💬 修订对话框 <span style="font-size:12px;color:#6b7280;font-weight:normal">直接在框内输入，可传 Word/PDF/Excel 等附件</span>
           <button class="btn btn-sm" id="btnChatWord" type="button">📑 导出对话 Word</button></h3>
@@ -270,7 +294,7 @@ main{max-width:1280px;margin:0 auto;padding:24px 20px 60px}
           <div id="chatAttach" style="padding:6px 10px 0"></div>
           <div style="display:flex;gap:8px;padding:8px;border-top:1px solid #e3e8ef;background:#fff">
             <button class="btn" id="btnChatUp" type="button" title="上传附件">📎</button><input type="file" id="chatFile" accept=".txt,.md,.docx,.doc,.pdf,.xlsx,.xls,.csv" hidden>
-            <input id="chatInput" placeholder="直接输入修改意见或问题，Enter 发送" style="flex:1;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px">
+            <textarea id="chatInput" rows="3" placeholder="输入修改意见或问题（支持多行；Enter 发送，Shift+Enter 换行）" style="flex:1;border:1px solid #d5dce6;border-radius:8px;padding:9px 12px;font-size:13px;resize:vertical;min-height:64px;max-height:200px"></textarea>
             <button class="btn btn-primary" id="btnChatSend" type="button">发送 ➤</button>
           </div>
         </div>

@@ -48,12 +48,12 @@ function seed(){
   {id:"s1",seed:1,title:"新商科实验教学中心建设项目申报书",type:"项目申报书",client:"某财经大学经济管理学院",year:"2025",keypoints:"以“数智化转型”为主线；突出跨专业实训与虚拟仿真；申报省级实验教学示范中心。",content:"一、项目背景…\n二、建设基础…\n三、建设内容…\n四、预算与绩效目标…"},
   {id:"s2",seed:1,title:"数智化商科实训基地建设方案",type:"建设方案",client:"某职业技术学院商学院",year:"2024",keypoints:"按“岗课赛证”融通设计；分三期建设；配套师资培训与课程资源包。",content:"一、建设背景与依据…\n二、建设目标与思路…\n三、建设内容与预算…"}],
  policies:[
-  {id:"z1",seed:1,name:"“十四五”数字经济发展规划（国发〔2021〕29号）",org:"国务院",date:"2021-12",keywords:"数字经济,产业数字化,数据要素",summary:"数据要素价值释放、产业数字化转型、数字经济治理体系。",usage:"论证数字化实训平台的时代必要性"},
-  {id:"z2",seed:1,name:"新一代人工智能发展规划（国发〔2017〕35号）",org:"国务院",date:"2017-07",keywords:"人工智能,教育体系,AI+X",summary:"把高端人才队伍建设作为人工智能发展的重中之重，完善人工智能教育体系。",usage:"建设背景“人工智能+X”复合人才培养"},
-  {id:"z3",seed:1,name:"中国教育现代化2035",org:"中共中央、国务院",date:"2019-02",keywords:"融合发展,共建共享,应用型",summary:"加大应用型、复合型、技术技能型人才培养比重。",usage:"指导思想与必要性论证"},
-  {id:"z4",seed:1,name:"关于深化产教融合的若干意见（国办发〔2017〕95号）",org:"国务院办公厅",date:"2017-12",keywords:"产教融合,校企合作",summary:"深化产教融合，推进校企合作，健全多元化办学体制。",usage:"可行性分析“企业深度参与协同育人”"},
-  {id:"z5",seed:1,name:"人力资源服务业创新发展行动计划（2023-2025年）",org:"人力资源社会保障部",date:"2023-01",keywords:"数字化转型,智能匹配",summary:"全面提升数字化水平，鼓励数字技术与人力资源管理服务深度融合。",usage:"行业趋势论证"},
-  {id:"z6",seed:1,name:"“十五五”数字福建规划（闽政〔2026〕7号）",org:"福建省人民政府",date:"2026",keywords:"教育数字化,人工智能赋能教育",summary:"做强做优做大融合创新的数字经济；深入实施教育数字化战略，促进人工智能助力教育变革。",usage:"福建省内高校数字经济方向项目申报的省级政策依据"}],
+  {id:"z1",seed:1,name:"“十四五”数字经济发展规划（国发〔2021〕29号）",org:"国务院",date:"2021-12",keywords:"数字经济；产业数字化；数据要素",summary:"数据要素价值释放、产业数字化转型、数字经济治理体系。",usage:"论证数字化实训平台的时代必要性"},
+  {id:"z2",seed:1,name:"新一代人工智能发展规划（国发〔2017〕35号）",org:"国务院",date:"2017-07",keywords:"人工智能；教育体系；AI+X",summary:"把高端人才队伍建设作为人工智能发展的重中之重，完善人工智能教育体系。",usage:"建设背景“人工智能+X”复合人才培养"},
+  {id:"z3",seed:1,name:"中国教育现代化2035",org:"中共中央、国务院",date:"2019-02",keywords:"融合发展；共建共享；应用型",summary:"加大应用型、复合型、技术技能型人才培养比重。",usage:"指导思想与必要性论证"},
+  {id:"z4",seed:1,name:"关于深化产教融合的若干意见（国办发〔2017〕95号）",org:"国务院办公厅",date:"2017-12",keywords:"产教融合；校企合作",summary:"深化产教融合，推进校企合作，健全多元化办学体制。",usage:"可行性分析“企业深度参与协同育人”"},
+  {id:"z5",seed:1,name:"人力资源服务业创新发展行动计划（2023-2025年）",org:"人力资源社会保障部",date:"2023-01",keywords:"数字化转型；智能匹配",summary:"全面提升数字化水平，鼓励数字技术与人力资源管理服务深度融合。",usage:"行业趋势论证"},
+  {id:"z6",seed:1,name:"“十五五”数字福建规划（闽政〔2026〕7号）",org:"福建省人民政府",date:"2026",keywords:"教育数字化；人工智能赋能教育",summary:"做强做优做大融合创新的数字经济；深入实施教育数字化战略，促进人工智能助力教育变革。",usage:"福建省内高校数字经济方向项目申报的省级政策依据"}],
  todos:[
   {id:"t1",title:"申报书初稿交付",meta:"某财经大学经济管理学院 · 方案交付",due:dOff(-2)},
   {id:"t2",title:"报价单确认与盖章",meta:"某职业技术学院商学院 · 报价提交",due:dOff(0)},
@@ -65,16 +65,17 @@ function seed(){
   {id:"k1",seed:1,name:"申报书撰写专家",desc:"按标准九章结构撰写完整项目申报书，正式书面语，预算自洽。",prompt:"以高校项目申报书的标准九章结构（项目背景与政策依据/学校现状与需求分析/建设目标与思路/建设内容与产品方案/资金预算与用途/组织实施与进度/预期效益/保障措施）撰写，语言正式、论证充分。"},
   {id:"k2",seed:1,name:"建设方案撰写",desc:"侧重建设内容、实施路径与进度安排的建设方案。",prompt:"以建设方案体例撰写，突出建设内容分解、软硬件配置、实施路径与分阶段进度安排，弱化申报审批性表述。"},
   {id:"k3",seed:1,name:"报价方案撰写",desc:"侧重预算明细、价格依据与商务条款。",prompt:"以报价方案体例撰写，预算明细逐项列示（名称/型号/单位/单价/数量/金额），合计等于分项之和，并附价格依据与商务说明。"},
-  {id:"k4",seed:1,name:"政策论证强化",desc:"在背景章节逐条深度引用勾选政策，强化立项依据。",prompt:"在“项目背景与政策依据”章节对每条勾选政策做“政策要点→本项目对应响应”的逐条论证，引用必须含文件名与文号，不得编造。"},
+  {id:"k4",seed:1,name:"政策论证强化",desc:"在背景章节自然融入并深度论证勾选政策，强化立项依据。",prompt:"在“项目背景与政策依据”等章节将勾选政策自然融入行文：对重点政策在段落内引用政策原文要点并展开“政策要求→本项目如何响应”的深度论证，引用必须含文件名与文号，不得编造；但严禁将政策做成逐条罗列的清单式段落。"},
  {id:"k5",seed:1,name:"去 AI 味润色",desc:"降低生成文本的 AI 感，更像人工撰写的正式文稿。",prompt:"全文须降低 AI 痕迹，模拟资深方案撰写人员的真实笔触：①删除或改写“综上所述、值得注意的是、首先…其次…最后、总而言之、不难发现、赋能、助力、打造、构建、旨在、具有重要意义、发挥着重要作用”等高频套话；②不堆砌排比句与对仗短语，同一段内不重复使用同一句式；③少用空洞形容词与连续破折号、感叹号，论证用具体事实、数据与政策依据展开；④句子长短交错、自然衔接，允许朴实的过渡；⑤不得因润色而删减章节、要点与预算数据，结构与内容必须完整保留。"},
-  {id:"k6",seed:1,name:"按勾选政策撰写（内容可增减）",desc:"政策章节按用户在生成台勾选的政策文件书写，内容可适当增减。",prompt:"生成初稿时，政策相关内容（项目背景与政策依据等章节）必须以用户在方案生成台勾选的政策文件为准进行书写：逐条引用勾选政策的名称、文号、发文单位与要点，并结合本项目展开论证；内容可适当增减——与项目关联度高的政策展开写（政策要点→本项目对应响应），关联度弱的可概括一句或不写，使篇幅与论证重心匹配项目实际；但严禁编造任何政策名称与文号，严禁引用用户未勾选的政策。"}],
+  {id:"k6",seed:1,name:"按勾选政策撰写（内容可增减）",desc:"政策章节按用户在生成台勾选的政策文件书写，内容可适当增减。",prompt:"生成初稿时，政策相关内容（项目背景与政策依据等章节）必须以用户在方案生成台勾选的政策文件为准进行书写：将勾选政策的名称、文号、发文单位与要点自然融入行文并展开论证，不做逐条罗列；内容可适当增减——与项目关联度高的政策展开写（政策要求→本项目如何响应），关联度弱的可概括一句或不写，使篇幅与论证重心匹配项目实际；但严禁编造任何政策名称与文号，严禁引用用户未勾选的政策。"}],
  fundOptions:["科研与教改项目经费","校企合作与经营收入","其他"],
  llm:{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""}};}
 let db=null;
 try{db=JSON.parse(localStorage.getItem(LS));}catch(e){}
 if(!db||!Array.isArray(db.products)){db=seed();localStorage.setItem(LS,JSON.stringify(db));}
-const persist=()=>localStorage.setItem(LS,JSON.stringify(db));
+function persist(){try{localStorage.setItem(LS,JSON.stringify(db));return true;}catch(e){alert("保存失败：浏览器本地存储空间已满（localStorage 超限），本次内容未写入。\n建议：①删除方案文库/政策资料库中导入了完整长文档的条目（占用空间最大）；②或先点顶部「导出 JSON」备份，再「清空全部数据」后重新导入精简内容。\n当前弹窗内容仍保留，可先复制正文到本地再处理。");return false;}}
 db.llm=db.llm||{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};
+db.ppt=db.ppt||{engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto"};
 if(!Array.isArray(db.hardware)||!db.hardware.length||(db.hardware[0]&&db.hardware[0].model===undefined))db.hardware=seed().hardware;
 if(!Array.isArray(db.formats)||!db.formats.length)db.formats=seed().formats;
 if(!Array.isArray(db.skills)||!db.skills.length)db.skills=seed().skills;
@@ -210,6 +211,23 @@ function autoMatchProducts(){
  const cats=majorCats(major);
  cbs.forEach(cb=>{const p=db.products.find(x=>x.id===cb.value);if(!p)return;cb.checked=prodUser.has(p.id)?prodUser.get(p.id):String(p.cat||"").split("、").some(c=>cats.has(c));});
 }
+function genSectionize(box,moreTitle){
+ const items=[...box.children];
+ if(!items.some(el=>el.querySelector("input[type=checkbox]")))return;
+ box.innerHTML=`<div class="gselwrap"></div><details class="gmore"><summary>${moreTitle}（<b class="gmcount">0</b> 项未选）</summary><div class="gmlist"></div></details>`;
+ const sel=box.querySelector(".gselwrap"),list=box.querySelector(".gmlist");
+ items.forEach(el=>{(el.querySelector("input[type=checkbox]").checked?sel:list).appendChild(el);});
+ syncGenSection(box);
+}
+function syncGenSection(box){
+ if(!box)return;const sel=box.querySelector(".gselwrap"),list=box.querySelector(".gmlist"),det=box.querySelector("details.gmore");
+ if(!sel||!list||!det)return;
+ [...sel.children].forEach(el=>{const cb=el.querySelector("input[type=checkbox]");if(cb&&!cb.checked)list.appendChild(el);});
+ [...list.children].forEach(el=>{const cb=el.querySelector("input[type=checkbox]");if(cb&&cb.checked)sel.appendChild(el);});
+ box.querySelector(".gmcount").textContent=list.children.length;
+ det.style.display=list.children.length?"":"none";
+}
+function syncAllGenSections(){syncGenSection($("#genProducts"));syncGenSection($("#genHardware"));syncGenSection($("#genPolicies"));}
 function renderGen(){
  $("#fTemplates").innerHTML=db.proposals.map(p=>`<label class="chk"><input type="checkbox" class="gtpl" value="${p.id}"><span class="n">${esc(p.title)}</span><span class="m">${esc(p.type)}</span></label>`).join("")||`<div style="color:#6b7280">方案文库为空，可不用模板。</div>`;
  $("#genFunds").innerHTML=db.fundOptions.map(o=>`<label class="chk"><input type="checkbox" class="gfund" value="${esc(o)}"><span class="n">${esc(o)}</span></label>`).join("");syncFundOther();
@@ -220,14 +238,16 @@ function renderGen(){
  const curK=$$(".gskill:checked").map(c=>c.value);
  $("#genSkills").innerHTML=db.skills.map(k=>`<label class="chk"><input type="checkbox" class="gskill" value="${k.id}" ${curK.includes(k.id)?"checked":""}><span class="n">${esc(k.name)}</span><span class="m">${esc(k.desc||"")}</span></label>`).join("")||`<div style="color:#6b7280">技能库为空，请到「🧩 Skill 技能库」新建或导入。</div>`;
  syncSkillDesc();
+ genSectionize($("#genProducts"),"其他产品");genSectionize($("#genHardware"),"其他硬件");genSectionize($("#genPolicies"),"其他政策");
  autoMatchProducts();
  autoMatchPolicies();
+ syncAllGenSections();
 }
 function syncSkillDesc(){const ks=$$(".gskill:checked").map(c=>db.skills.find(x=>x.id===c.value)).filter(Boolean);$("#skillDesc").textContent=ks.length?`已选 ${ks.length} 项技能：${ks.map(k=>k.name).join("、")}（提示词将注入生成指令）`:"未勾选技能，可到「Skill 技能库」新建或导入。";}
 function syncLlmUi(){$("#llmProvider").value=db.llm.provider||"deepseek";$("#llmBase").value=db.llm.baseUrl||"";$("#llmModel").value=db.llm.model||"";$("#llmKey").value=db.llm.key||"";syncModelList();}
-const MODEL_HINTS={deepseek:["deepseek-chat（对话模型，性价比高）","deepseek-reasoner（深度推理）"],qwen:["qwen-plus（均衡推荐）","qwen-turbo（快速）","qwen-max（最强）","qwen-long（长文本）"],doubao:["doubao-1-5-pro-32k（推荐）","doubao-1-5-lite-32k（快速）","doubao-seed-1-6-250615"],custom:[]};
+const MODEL_HINTS={deepseek:["deepseek-chat（对话模型，性价比高）","deepseek-reasoner（深度推理）"],qwen:["qwen3-max（旗舰最强，长文推荐）","qwen-plus（均衡推荐）","qwen-turbo（快速）","qwen-max（旗舰别名）","qwen-long（超长文本）"],doubao:["doubao-1-5-pro-32k（推荐）","doubao-1-5-lite-32k（快速）","doubao-seed-1-6-250615"],custom:[]};
 function syncModelList(){$("#modelList").innerHTML=(MODEL_HINTS[db.llm.provider]||[]).map(m=>`<option value="${m.split("（")[0]}">${m}</option>`).join("");}
-function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();}
+function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();syncPptUi();}
 
 /* ---------- 弹窗与表单 ---------- */
 function openModal(html){$("#modalBox").innerHTML=html;$("#mask").hidden=false;}
@@ -274,7 +294,7 @@ function libForm(id){
   const cats=$$(".mcat").filter(c=>c.checked).map(c=>c.value);if($("#mCatOther").checked){const cv=$("#mCatCustom").value.trim();cats.push(...(cv?cv.split(/[、,，]/).map(s=>s.trim()).filter(Boolean):["其他"]));}
   const data={name,cat:cats.join("、")||"其他",price:$("#mPrice").value.trim(),params:rte.innerHTML,points:$("#mPoints").value.trim()};
   if(id)Object.assign(p,data);else db.products.push({id:uid(),...data});
-  persist();closeModal();renderAll();toast("已保存（外部卡片自动提炼 50 字摘要）");};
+  if(!persist())return;closeModal();renderAll();toast("已保存（外部卡片自动提炼 50 字摘要）");};
 }
 function hwForm(id){
  const p=id?db.hardware.find(x=>x.id===id):{name:"",model:"",unit:"套",price:""};
@@ -289,7 +309,7 @@ function hwForm(id){
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写设备名称");return;}
   const data={name,model:$("#mModel").value.trim(),unit:$("#mUnit").value.trim()||"套",price:parseFloat($("#mPrice").value)||0};
   if(id)Object.assign(p,data);else db.hardware.push({id:uid(),...data});
-  persist();closeModal();renderAll();toast("已保存");};
+  if(!persist())return;closeModal();renderAll();toast("已保存");};
 }
 function fmtRow(key,label,st){
  return `<div class="fmtrow"><b>${label}</b>
@@ -316,7 +336,7 @@ function formatForm(id){
   const styles={};FMT_ELS.forEach(([k])=>{styles[k]={font:$(`#fs_${k}_font`).value,size:$(`#fs_${k}_size`).value,align:$(`#fs_${k}_align`).value,line:$(`#fs_${k}_line`).value,indent:parseInt($(`#fs_${k}_indent`).value,10)||0,space:parseInt($(`#fs_${k}_space`).value,10)||0,bold:$(`#fs_${k}_bold`).checked?1:0};});
   const data={name,structure:$("#mStruct").value,styles};
   if(id)Object.assign(f,data);else db.formats.push({id:uid(),...data});
-  persist();closeModal();renderAll();toast("已保存，可在生成台套用");};
+  if(!persist())return;closeModal();renderAll();toast("已保存，可在生成台套用");};
 }
 /* ---------- 推荐技能（移植自其他软件，一键安装） ---------- */
 const EXTRA_SKILLS=[
@@ -341,7 +361,7 @@ function skillForm(id){
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写技能名称");return;}
   const data={name,desc:$("#mDesc").value.trim(),prompt:$("#mPrompt").value.trim()};
   if(id)Object.assign(k,data);else db.skills.push({id:uid(),...data});
-  persist();closeModal();renderGen();renderSkillHub();toast("已保存");};
+  if(!persist())return;closeModal();renderGen();renderSkillHub();toast("已保存");};
 }
 function skillMgr(){
  const extra=EXTRA_SKILLS.map((k,i)=>db.skills.some(s=>s.name===k.name)?"":`<div class="chk"><span class="n" style="flex:1">${k.name}<span class="m" style="margin-left:8px">${k.desc}</span></span><button class="btn btn-sm" data-install="${i}">安装</button></div>`).join("");
@@ -380,7 +400,7 @@ function proposalForm(id){
  $("#mOk").onclick=()=>{const title=$("#mTitle").value.trim();if(!title){alert("请填写标题");return;}
   const data={title,type:$("#mType").value,client:$("#mClient").value.trim(),year:$("#mYear").value.trim(),keypoints:$("#mKeys").value.trim(),content:$("#mContent").innerHTML.trim()};
   if(id)Object.assign(p,data);else db.proposals.push({id:uid(),...data});
-  persist();closeModal();renderAll();toast("已保存");};
+  if(!persist())return;closeModal();renderAll();toast("已保存");};
 }
 function policyForm(id){
  const p=id?db.policies.find(x=>x.id===id):{name:"",org:"",date:"",keywords:"",summary:"",usage:""};
@@ -388,7 +408,7 @@ function policyForm(id){
  <div class="field"><label>政策名称（含文号）*</label><input id="mName" value="${esc(p.name)}" placeholder="如：××规划（国发〔2021〕29号）"></div>
  <div class="field"><label>发文单位</label><input id="mOrg" value="${esc(p.org)}"></div>
  <div class="field"><label>时间</label><input id="mDate" value="${esc(p.date)}" placeholder="如：2021-12"></div>
- <div class="field"><label>关键词</label><input id="mKeys" value="${esc(p.keywords)}" placeholder="逗号分隔"></div>
+ <div class="field"><label>关键词</label><input id="mKeys" value="${esc(p.keywords)}" placeholder="分号（；）分隔，如：数字经济；产教融合"></div>
  <div class="field"><label>正文内容（上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/PDF/Excel/txt（自动识别名称/单位/时间/关键词，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.doc,.pdf,.xlsx,.xls,.csv" hidden></label><div class="rte" id="mSum" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.summary)?p.summary:esc(p.summary).replace(/\r?\n/g,"<br>")}</div></div>
  <div class="field"><label>适用场景</label><input id="mUse" value="${esc(p.usage)}" placeholder="如：建设背景引用"></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
@@ -399,14 +419,14 @@ function policyForm(id){
    if(lines.length&&!$("#mName").value.trim())$("#mName").value=lines[0].replace(/^[#\s]+/,"").slice(0,80);
    const om=t.match(/[\u4e00-\u9fa5]{0,18}(?:人民政府|教育部|委员会|办公厅|教育厅|财政局|发展改革委|局)(?=[\s：:，。、\d]|$)/);if(om&&!$("#mOrg").value.trim())$("#mOrg").value=om[0];
    const dm=t.match(/\d{4}\s*年\s*\d{1,2}\s*月(?:\s*\d{1,2}\s*日)?/);if(dm&&!$("#mDate").value.trim())$("#mDate").value=dm[0].replace(/\s+/g,"");
-   if(!$("#mKeys").value.trim()){const ws=lines[0].replace(/关于|印发|通知|意见|办法|方案|规划|决定|函|的/g," ").split(/[、，。\s《》（）()·]+/).filter(w=>/[\u4e00-\u9fa5]{2,}/.test(w)&&w.length<=20).map(w=>w.replace(/[^\u4e00-\u9fa5]/g,"").slice(0,8)).filter(w=>w.length>=2).slice(0,5);if(ws.length)$("#mKeys").value=ws.join("、");}
+   if(!$("#mKeys").value.trim()){const ws=lines[0].replace(/关于|印发|通知|意见|办法|方案|规划|决定|函|的/g," ").split(/[、，。\s《》（）()·]+/).filter(w=>/[\u4e00-\u9fa5]{2,}/.test(w)&&w.length<=20).map(w=>w.replace(/[^\u4e00-\u9fa5]/g,"").slice(0,8)).filter(w=>w.length>=2).slice(0,5);if(ws.length)$("#mKeys").value=ws.join("；");}
    if(!$("#mUse").value.trim())$("#mUse").value=/职业教育|职业院校/.test(t)?"职教/实训类项目建设背景与立项依据引用":"建设背景与政策依据章节引用";
    $("#mSum").innerHTML+=($("#mSum").innerHTML?"<br>":"")+r.html;toast("已导入正文并自动识别名称/单位/时间/关键词/适用场景，可自行调整");}catch(err){alert("解析失败："+err.message);}e.target.value="";};
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写政策名称");return;}
-  const data={name,org:$("#mOrg").value.trim(),date:$("#mDate").value.trim(),keywords:$("#mKeys").value.trim(),summary:$("#mSum").innerHTML.trim(),usage:$("#mUse").value.trim()};
+  const data={name,org:$("#mOrg").value.trim(),date:$("#mDate").value.trim(),keywords:$("#mKeys").value.trim().replace(/[,，、]+/g,"；"),summary:$("#mSum").innerHTML.trim(),usage:$("#mUse").value.trim()};
   if(id)Object.assign(p,data);else db.policies.push({id:uid(),...data});
-  persist();closeModal();renderAll();toast("已保存");};
+  if(!persist())return;closeModal();renderAll();toast("已保存");};
 }
 function todoForm(){
  openModal(`<h3>新任务</h3>
@@ -417,7 +437,7 @@ function todoForm(){
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const title=$("#tTitle").value.trim();if(!title){alert("请填写任务标题");return;}
   db.todos.push({id:uid(),title,meta:$("#tMeta").value.trim(),due:$("#tDue").value||todayStr()});
-  persist();closeModal();renderTodos();};
+  if(!persist())return;closeModal();renderTodos();};
 }
 
 /* ---------- 事件绑定 ---------- */
@@ -457,16 +477,17 @@ document.addEventListener("click",e=>{
   persist();renderTodos();}
 });
 document.addEventListener("change",e=>{
- if(e.target.classList.contains("gpol"))polUser.set(e.target.value,e.target.checked);
- else if(e.target.classList.contains("gp")){prodUser.set(e.target.value,e.target.checked);autoMatchPolicies();}
+ if(e.target.classList.contains("gpol")){polUser.set(e.target.value,e.target.checked);syncGenSection($("#genPolicies"));}
+ else if(e.target.classList.contains("gp")){prodUser.set(e.target.value,e.target.checked);autoMatchPolicies();syncGenSection($("#genProducts"));syncGenSection($("#genPolicies"));}
+ else if(e.target.classList.contains("ghw")){syncGenSection($("#genHardware"));}
  else if(e.target.classList.contains("gfund"))syncFundOther();
  else if(e.target.classList.contains("gskill"))syncSkillDesc();
 });
-$("#fMajor").addEventListener("input",()=>{autoMatchProducts();autoMatchPolicies();});
-$("#btnPolMatch").onclick=()=>{polUser.clear();prodUser.clear();autoMatchProducts();autoMatchPolicies();toast("已按专业重新智能匹配产品与政策");};
+$("#fMajor").addEventListener("input",()=>{autoMatchProducts();autoMatchPolicies();syncAllGenSections();});
+$("#btnPolMatch").onclick=()=>{polUser.clear();prodUser.clear();autoMatchProducts();autoMatchPolicies();syncAllGenSections();toast("已按专业重新智能匹配产品与政策");};
 /* 备份导入导出与清理 */
 function exportJson(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="申报方案工作台备份_"+todayStr()+".json";a.click();toast("已导出备份");}
-function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
+function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];if(!db.ppt)db.ppt={engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto"};if(!db.llm)db.llm={provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
 $("#btnExport").onclick=exportJson;$("#btnExport2").onclick=exportJson;
 $("#btnImportTop").onclick=()=>$("#importFile").click();$("#btnImport2").onclick=()=>$("#importFile").click();
 $("#importFile").onchange=e=>{if(e.target.files[0])importJson(e.target.files[0]);e.target.value="";};
@@ -502,18 +523,20 @@ function wrapName(n){return /[《〈]/.test(n)?n:"《"+n+"》";}
 function fmtSpecText(f){if(!f)return "";const L=FMT_ELS.map(([k,l])=>{const s=f.styles[k]||{};return `${l}：${s.font} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}字符 行距${s.line} 段前段后${s.space||0}pt`;});return `结构格式：\n${f.structure||""}\n各级格式：${L.join("；")}`;}
 function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,skills,fmt,tplText,budget){
  const rules=["使用正式书面语，标题层级用“一、/（一）/1./（1）/①”五级；",
- "“建设背景与政策依据”部分必须逐条引用用户勾选的政策（含文件名与文号），不得编造任何政策文件名或文号；",
+ "政策依据必须自然融入行文：把用户勾选政策的要点有机编织进“建设背景与政策依据”等相关章节的论述中，在段落行文内顺势引用政策名称与文号（如“根据《××》（×发〔20××〕×号）关于……的要求，本项目……”），让政策精神与项目论证浑然一体；严禁采用“政策一：……；政策二：……”的清单式罗列，严禁单独设立仅逐条列举政策名称与要点的段落，不得编造任何政策文件名或文号；",
  "“建设内容”部分必须逐款融入用户勾选的产品（名称、核心参数、卖点），参数不得夸大或虚构；",
  "“预算”部分仅写资金构成、使用管理与价格依据说明，不要自行绘制预算明细表，系统会根据勾选产品与硬件自动插入标准《项目预算明细表》（含明细与合计，合计=分项之和）；",
+ "除预算明细表外，凡应当以表格呈现的内容（硬件配置、实施进度安排、阶段计划、人员分工等）必须直接输出真实的 Markdown 表格：每行以“|”开头并含表头行与分隔行（如 |---|---|），单元格内容写实，严禁写“表格略”“如下表所示”却不给出表格，也不得以文字罗列替代表格；",
  "对可推断的一般性内容（政策背景、行业趋势、常规建设思路等）可直接补全展开，尽量不留占位；但学校成立时间、专业开设年份、在校生/专业学生人数、教师人数、现有设备清单等确定性数据一律禁止编造，保留“（待核实：请学校提供×××）”字样，供用户后续确认；"];
  const tplHasAppx=!!tplText&&(/^附件\s*$/m.test(tplText)||/^附件[一二三四五六七八九十\d]/m.test(tplText)||/^[一二三四五六七八九十]+、[^\n]*附件/m.test(tplText));
  if(tplText){rules.push(`用户上传了现有文件模版，内容摘录如下，请从中提取项目背景、学校情况、建设需求等可用信息并融入正文：\n"""\n${tplText.slice(0,5000)}\n"""`);
   rules.push("正文章节结构必须严格跟随上传模版的章节标题与顺序（含各级标题编号样式），不得自行改用默认建议章节；");
   rules.push(tplHasAppx?"模版包含“附件”章节：正文中保留该章节标题，但不要填写具体附件内容，系统会自动在该章节下填入所选产品核心参数表格；":"模版不含“附件”章节：正文中不要自行撰写“附件”章节，系统会在文末自动追加并附上所选产品核心参数表格；");}
  else rules.push("正文中不要自行撰写“附件”章节，系统会在文末自动附上所选产品核心参数表格；");
+ rules.push("附件/附表相关内容一律不得出现在正文与目录中：若文中有“目录”章节，目录只列正文章节、不包含任何附件/附表条目；附件章节与产品核心参数表格由系统在全文末尾自动追加，正文写到最后一个正文章节即结束；");
  if(db.train&&db.train.style&&db.train.on)rules.push(`以下写作规范由历史方案自动训练总结而来，请严格遵守：${db.train.style.slice(0,1500)}`);
- if(words.total||words.chapter||words.max)rules.push(`字数要求：全文不少于 ${words.total} 字${words.max?`，且全文不超过 ${words.max} 字（请在该上限内合理分配各章节篇幅）`:""}，且“一、/二、…”每个章节不少于 ${words.chapter} 字，论证充分展开；`);
- if(hw.length)rules.push("用户勾选了硬件配置，须在“建设内容”中单列硬件小节（设备名称/型号规格/单位/单价/数量/金额），并纳入预算明细；");
+ if(words.total||words.chapter||words.max)rules.push(`字数要求（硬性验收标准，必须严格执行）：全文不少于 ${words.total} 字${words.max?`，且全文不超过 ${words.max} 字（请在该上限内合理分配各章节篇幅）`:""}，且“一、/二、…”每个章节不少于 ${words.chapter} 字。请先按字数要求规划各章节篇幅再动笔，论证充分展开，用具体的建设内容、实施细节、数据与效益分析充实篇幅，严禁用空话套话或重复内容凑字数；`);
+ if(hw.length)rules.push("用户勾选了硬件配置：须在“建设内容”章节单列硬件小节，并用 Markdown 表格列示（列：设备名称｜型号规格｜单位｜单价（万元）｜数量｜金额（万元）），并纳入预算明细；");
  if(funds.length)rules.push(`项目资金来源为：${funds.join("、")}；须在预算章节说明资金构成与使用管理；`);
  if(budget)rules.push(`用户设定项目整体预算为 ${budget} 万元，即产品/硬件等综合费用上限：预算章节表述的投资额不得超过该上限；若勾选产品与硬件的参考报价合计超过上限，须表述为“分期建设、按需配置，本期投入控制在 ${budget} 万元以内”，不得编造对不上的分项数字；`);
  if(fmt)rules.push(`文档格式须符合「${fmt.name}」：${fmtSpecText(fmt).replace(/\n/g," ")}`);
@@ -535,10 +558,10 @@ ${pols.map((p,i)=>`${i+1}. ${p.name}（${p.org}，${p.date}）关键词：${p.ke
  if(!tplText)user+=`\n\n建议章节：一、项目背景与政策依据；二、学校现状与需求分析；三、建设目标与思路；四、建设内容与产品方案（含参数与卖点融入）；五、资金预算与用途（明细合计=总额，注明资金来源）；六、组织实施与进度安排；七、预期效益分析；八、保障措施。`;
  return [{role:"system",content:sys},{role:"user",content:user}];
 }
-async function streamChat(messages,onChunk){
+async function streamChat(messages,onChunk,signal){
  const base=(db.llm.baseUrl||"").replace(/\/+$/,"");
  if(!base)throw new Error("未配置接口地址");
- const res=await fetch(base+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(db.llm.key||"")},body:JSON.stringify({model:db.llm.model,messages,stream:true})});
+ const res=await fetch(base+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+(db.llm.key||"")},body:JSON.stringify({model:db.llm.model,messages,stream:true}),signal});
  if(!res.ok){let t="";try{t=await res.text();}catch(e){}throw new Error(`HTTP ${res.status}：${t.slice(0,300)}`);}
  const reader=res.body.getReader();const dec=new TextDecoder();let buf="",raw="",emitted=false;
  const handle=d=>{if(d==="[DONE]")return;try{const j=JSON.parse(d);const c=j.choices&&j.choices[0];const t=c&&(c.delta&&c.delta.content||c.message&&c.message.content)||"";if(t){emitted=true;onChunk(t);}}catch(e){}};
@@ -639,16 +662,24 @@ function gatherGen(){
   skills:$$(".gskill:checked").map(c=>db.skills.find(k=>k.id===c.value)).filter(Boolean),
   tplText:tplFiles.map(f=>f.text).join("\n\n")};
 }
+let genAbort=null;
 $("#btnGen").onclick=async()=>{
+ if(genAbort){genAbort.abort();return;}
  const g=gatherGen();const ta=$("#genResult");
  const totSel=Math.round((g.prods.reduce((s,p)=>s+parseWan(p.price),0)+g.hw.reduce((s,h)=>s+(parseFloat(h.amount)||0),0))*100)/100;
  if(g.budget&&totSel>g.budget)toast(`⚠ 勾选产品+硬件参考合计 ${totSel} 万元，超过整体预算 ${g.budget} 万元；预算章节将按“分期实施”表述`);
  if(!db.llm.key){ta.value=localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget);toast("未配置 API Key，已用本地模板拼装框架");return;}
- const btn=$("#btnGen");btn.disabled=true;btn.textContent="⏳ 生成中…";ta.value="";
- try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText,g.budget),t=>{ta.value+=t;ta.scrollTop=ta.scrollHeight;});
-  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);updateChecklist();toast("生成完成（结构跟随模版，已自动插入预算明细表与产品参数附件）");}
- catch(err){ta.value+=(ta.value?"\n\n":"")+"【生成失败】"+err.message+"\n请检查 API Key / 接口地址 / 模型名称；或清空 Key 后使用本地模板拼装。";}
- finally{btn.disabled=false;btn.textContent="⚡ 生成初稿";}
+ const btn=$("#btnGen");const ac=new AbortController();genAbort=ac;btn.textContent="⏳ 连接模型中…（可点击取消）";ta.value="";
+ let chars=0,got=false;const t0=Date.now();
+ const tick=setInterval(()=>{const s=Math.round((Date.now()-t0)/1000);btn.textContent=`⏳ ${got?"生成中":"等待模型响应"}… ${s}s${chars?` · 已收 ${chars} 字`:""}（可点击取消）`;},500);
+ const firstTo=setTimeout(()=>{if(!got)ac.abort();},120000);
+ try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText,g.budget),t=>{got=true;chars+=t.length;ta.value+=t;ta.scrollTop=ta.scrollHeight;},ac.signal);
+  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);updateChecklist();
+  const cnt=ta.value.replace(/\s+/g,"").length;
+  toast(`生成完成，全文约 ${cnt} 字，用时 ${Math.round((Date.now()-t0)/1000)}s`+(g.words.total&&cnt<g.words.total?`；⚠ 未达最低字数要求 ${g.words.total} 字，建议重新生成或在修订对话框中要求扩写`:"（已自动插入预算明细表与产品参数附件）"));}
+ catch(err){if(err.name==="AbortError"){ta.value+=(ta.value?"\n\n":"")+"【已取消或超时】"+(got?"已停止生成，上方已接收的内容仍可使用。":"2 分钟内未收到模型响应：多为模型服务繁忙（可稍后重试），或接口不支持流式输出/模型名称有误。");}
+ else ta.value+=(ta.value?"\n\n":"")+"【生成失败】"+err.message+"\n请检查 API Key / 接口地址 / 模型名称；或清空 Key 后使用本地模板拼装。";}
+ finally{clearInterval(tick);clearTimeout(firstTo);genAbort=null;btn.textContent="⚡ 生成初稿";}
 };
 
 /* ---------- 修订对话框 ---------- */
@@ -710,6 +741,121 @@ $("#btnWord").onclick=()=>{const text=$("#genResult").value;if(!text.trim()){ale
  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(title)}</title></head><body>${md2html(text,fmt)}</body></html>`;
  const blob=new Blob(["\ufeff",html],{type:"application/msword"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title+".doc";a.click();toast(fmt?`已导出 Word（套用格式：${fmt.name}）`:"已导出 Word");};
+
+/* ---------- PPT 生成（本地引擎 + 讯飞智文） ---------- */
+function syncPptUi(){if(!$("#pptEngine"))return;$("#pptEngine").value=db.ppt.engine||"local";$("#zwAppId").value=db.ppt.zwAppId||"";$("#zwApiKey").value=db.ppt.zwApiKey||"";$("#zwApiSecret").value=db.ppt.zwApiSecret||"";$("#zwTheme").value=db.ppt.zwTheme||"auto";$("#zwCfg").style.display=db.ppt.engine==="zhiwen"?"":"none";}
+["#pptEngine","#zwAppId","#zwApiKey","#zwApiSecret","#zwTheme"].forEach(s=>{const el=$(s);if(el)el.addEventListener("change",()=>{db.ppt.engine=$("#pptEngine").value;db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();db.ppt.zwTheme=$("#zwTheme").value;persist();syncPptUi();});});
+/* 从生成结果提炼 PPT 大纲（章标题 + 小节要点，可再编辑） */
+function extractPptOutline(text,project){
+ const lines=(text||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+ const chapters=[];let cur=null;
+ for(const l of lines){
+  if(/^[一二三四五六七八九十]+、/.test(l)){cur={t:l.replace(/^[一二三四五六七八九十]+、/,""),b:[]};chapters.push(cur);continue;}
+  if(!cur)continue;
+  if(/^（[一二三四五六七八九十]+）/.test(l)){cur.b.push(l.replace(/^（[一二三四五六七八九十]+）/,""));continue;}
+  if(cur.b.length<5&&l.length>15&&!/^\|/.test(l)&&!/^[①-⑩]/.test(l))cur.b.push(l.length>60?l.slice(0,60)+"…":l);}
+ const out=["标题："+(project||"方案汇报")];
+ if(chapters.length)chapters.slice(0,10).forEach(c=>{out.push(c.t);c.b.slice(0,4).forEach(b=>out.push("- "+b));});
+ else{out.push("方案概览");out.push("- "+(lines.slice(0,3).join("；").slice(0,120)||"请先生成方案初稿"));}
+ return out.join("\n");
+}
+/* 解析大纲文本为幻灯片结构：非列表行=页标题，“- ”开头行=要点 */
+function parsePptOutline(text){
+ let title="方案汇报";const slides=[];
+ text.split(/\r?\n/).forEach(l=>{const t=l.trim();if(!t)return;
+  const mT=t.match(/^标题[:：]\s*(.+)$/);if(mT){title=mT[1];return;}
+  if(/^[-•·]/.test(t)){if(!slides.length)slides.push({t:"内容概览",b:[]});slides[slides.length-1].b.push(t.replace(/^[-•·]\s*/,""));}
+  else slides.push({t:t,b:[]});});
+ return{title,slides};
+}
+/* 本地引擎：JSZip 直接拼装 OOXML 生成 .pptx（16:9，离线、免费、可反复调整） */
+const PXM=(s,h)=>`<a:pPr algn="${h.align}">${h.bullet?"<a:buChar char=\"▪\"/>":"<a:buNone/>"}</a:pPr><a:r><a:rPr lang=\"zh-CN\" sz=\"${h.sz*100}\"${h.bold?" b=\"1\"":""} dirty=\"0\"><a:solidFill><a:srgbClr val=\"${h.color}\"/></a:solidFill><a:latin typeface=\"微软雅黑\"/><a:ea typeface=\"微软雅黑\"/></a:rPr><a:t>${esc(s)}</a:t></a:r>`;
+function PXTB(x,y,w,h,runs){return `<p:sp><p:nvSpPr><p:cNvPr id=\"${2+Math.floor(Math.random()*1e6)}\" name=\"\"/><p:cNvSpPr txBox=\"1\"/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x=\"${x}\" y=\"${y}\"/><a:ext cx=\"${w}\" cy=\"${h}\"/></a:xfrm><a:prstGeom prst=\"rect\"><a:avLst/></a:prstGeom><a:noFill/></p:spPr><p:txBody><a:bodyPr wrap=\"square\" anchor=\"ctr\"/><a:lstStyle/>${runs}</p:txBody></p:sp>`;}
+async function genLocalPpt(outlineText){
+ if(!window.JSZip)throw new Error("压缩组件未加载，请联网后刷新页面");
+ const{title,slides}=parsePptOutline(outlineText);
+ const W=12192000,H=6858000,MAIN="1D4FA8",GRAY="6B7280",DARK="374151";
+ const pages=[];
+ pages.push(PXTB(600000,2400000,10992000,1400000,PXM(title,{align:"ctr",sz:36,bold:1,color:MAIN}))+PXTB(600000,4000000,10992000,600000,PXM("商科实训 · 申报方案工作台 · "+todayStr(),{align:"ctr",sz:14,color:GRAY})));
+ slides.forEach(sl=>{let r=PXTB(457200,274638,11277600,800000,PXM(sl.t,{align:"l",sz:26,bold:1,color:MAIN}));
+  if(sl.b.length)r+=PXTB(600000,1250000,10992000,5200000,sl.b.slice(0,6).map(b=>"<a:p>"+PXM(b,{align:"l",sz:15,color:DARK,bullet:1})+"</a:p>").join(""));
+  pages.push(r);});
+ pages.push(PXTB(600000,2700000,10992000,1400000,PXM("谢谢聆听",{align:"ctr",sz:36,bold:1,color:MAIN})));
+ const ids=pages.map((_,i)=>i+1);
+ const CT=[`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>`,ids.map(i=>`<Override PartName="/ppt/slides/slide${i}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join(""),"</Types>"].join("");
+ const RELS0=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/></Relationships>`;
+ const PRES=[`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:presentation xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>`,ids.map((n,i)=>`<p:sldId id="${255+n}" r:id="rId${i+2}"/>`).join(""),`</p:sldIdLst><p:sldSz cx="${W}" cy="${H}"/><p:notesSz cx="${H}" cy="${W}"/></p:presentation>`].join("");
+ const PRESR=[`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>`,ids.map((n,i)=>`<Relationship Id="rId${i+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${n}.xml"/>`).join(""),"</Relationships>"].join("");
+ const SM=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:bg><p:bgPr><a:solidFill><a:srgbClr val="F4F7FC"/></a:solidFill><a:effectLst/></p:bgPr></p:bg><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst></p:sldMaster>`;
+ const SMR=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`;
+ const SL=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" type="blank"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping/></p:clrMapOvr></p:sldLayout>`;
+ const SLR=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`;
+ const THEME=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Office"><a:themeElements><a:clrScheme name="SBW"><a:dk1><a:srgbClr val="111827"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1D4FA8"/></a:dk2><a:lt2><a:srgbClr val="F4F7FC"/></a:lt2><a:accent1><a:srgbClr val="1D4FA8"/></a:accent1><a:accent2><a:srgbClr val="2F6BD8"/></a:accent2><a:accent3><a:srgbClr val="15803D"/></a:accent3><a:accent4><a:srgbClr val="B45309"/></a:accent4><a:accent5><a:srgbClr val="7C3AED"/></a:accent5><a:accent6><a:srgbClr val="DC2626"/></a:accent6><a:hlink><a:srgbClr val="1D4FA8"/></a:hlink><a:folHlink><a:srgbClr val="6B7280"/></a:folHlink></a:clrScheme><a:fontScheme name="SBW"><a:majorFont><a:latin typeface="微软雅黑"/><a:ea typeface="微软雅黑"/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="微软雅黑"/><a:ea typeface="微软雅黑"/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="9525"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="25400"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="38100"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`;
+ const zip=new JSZip();
+ zip.file("[Content_Types].xml",CT);
+ zip.folder("_rels").file(".rels",RELS0);
+ const pp=zip.folder("ppt");
+ pp.file("presentation.xml",PRES);
+ pp.folder("_rels").file("presentation.xml.rels",PRESR);
+ pp.folder("slideMasters").file("slideMaster1.xml",SM);
+ pp.folder("slideMasters/_rels").file("slideMaster1.xml.rels",SMR);
+ pp.folder("slideLayouts").file("slideLayout1.xml",SL);
+ pp.folder("slideLayouts/_rels").file("slideLayout1.xml.rels",SLR);
+ pp.folder("theme").file("theme1.xml",THEME);
+ pages.forEach((body,i)=>{pp.folder("slides").file(`slide${i+1}.xml`,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/>${body}</p:spTree></p:cSld><p:clrMapOvr><a:overrideClrMapping/></p:clrMapOvr></p:sld>`);
+  pp.folder("slides/_rels").file(`slide${i+1}.xml.rels`,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/></Relationships>`);});
+ const blob=await zip.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation"});
+ const fn=(title||"方案")+".pptx";
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fn;a.click();
+ return fn;
+}
+/* 讯飞智文引擎：HMAC-SHA1(md5(appId+ts)) 鉴权 → createByOutline → 轮询 progress 拿下载链接 */
+async function zwAuthHeaders(){
+ const appId=db.ppt.zwAppId,secret=db.ppt.zwApiSecret;
+ if(!appId||!secret)throw new Error("请先填写讯飞智文的 APPID 与 APISecret");
+ if(!window.md5)throw new Error("签名组件未加载，请联网后刷新");
+ const ts=Math.floor(Date.now()/1000);
+ const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-1"},false,["sign"]);
+ const sig=await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(md5(appId+ts)));
+ return{"appId":appId,"timestamp":String(ts),"signature":btoa(String.fromCharCode(...new Uint8Array(sig))),"Content-Type":"application/json"};
+}
+async function genZhiwenPpt(query,outlineText,onStatus){
+ const res=await fetch("https://zwapi.xfyun.cn/api/aippt/createByOutline",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,outline:outlineText,theme:db.ppt.zwTheme||"auto",language:"cn"})});
+ const j=await res.json();
+ if(j.code!==0)throw new Error("讯飞智文返回错误 "+j.code+"："+(j.desc||"请检查凭证与点量"));
+ const sid=j.data.sid;onStatus("任务已创建，智文正在生成大纲与 PPT…");
+ for(let i=0;i<200;i++){await new Promise(r=>setTimeout(r,3500));
+  const pr=await fetch("https://zwapi.xfyun.cn/api/aippt/progress?sid="+encodeURIComponent(sid),{headers:await zwAuthHeaders()});
+  const pj=await pr.json();const d=(pj&&pj.data)||{};
+  if(pj.code!==0)throw new Error("进度查询失败："+pj.desc);
+  if(d.errMsg)throw new Error("生成失败："+d.errMsg);
+  onStatus(`智文生成中… ${d.process??0}%（30=大纲完成，70=PPT完成，100=可下载）`);
+  if(d.process>=100&&d.pptUrl)return d.pptUrl;}
+ throw new Error("生成超时（>10 分钟），请稍后重试");
+}
+$("#btnPpt").onclick=()=>{const panel=$("#pptPanel");panel.hidden=!panel.hidden;
+ if(!panel.hidden){const text=$("#genResult").value.trim();
+  if(!text){toast("请先在上方生成方案初稿，再基于初稿生成 PPT");panel.hidden=true;return;}
+  if(!$("#pptOutline").value.trim())$("#pptOutline").value=extractPptOutline(text,$("#fProject").value.trim()||"方案汇报");
+  syncPptUi();}};
+$("#btnPptRun").onclick=async()=>{
+ const outline=$("#pptOutline").value.trim();if(!outline){alert("PPT 大纲不能为空");return;}
+ const btn=$("#btnPptRun");btn.disabled=true;const st=$("#pptStatus");$("#pptResult").hidden=true;st.textContent="";
+ try{
+  if(db.ppt.engine==="zhiwen"){
+   const article=($("#genResult").value||"").slice(0,6000);
+   const query=`请基于以下方案文档生成汇报 PPT，项目：${$("#fProject").value.trim()||"方案"}。方案内容摘要：${article.slice(0,3000)}`;
+   const url=await genZhiwenPpt(query,outline,m=>st.textContent=m);
+   const a=$("#pptDownload");a.href=url;a.target="_blank";$("#pptResult").hidden=false;st.textContent="生成完成，点击右侧按钮下载";
+  }else{
+   st.textContent="本地生成中…";
+   const fn=await genLocalPpt(outline);
+   st.textContent=`已生成 ${fn}，浏览器已开始下载；不满意可编辑大纲后再次生成`;
+  }
+ }catch(err){
+  st.textContent=err instanceof TypeError?"⚠ 浏览器跨域（CORS）拦截了对讯飞智文的直接调用：该接口为服务端设计，纯静态页面无法直连。请改用本地引擎，或自建转发服务后再试。":"⚠ "+err.message;}
+ finally{btn.disabled=false;}
+};
 
 /* ---------- 现有文件模版上传（自动补充项目基本信息） ---------- */
 let tplFiles=[];
@@ -788,9 +934,9 @@ async function checkPolicies(){
 async function fetchNewPolicies(){
  const cats=[...new Set(db.products.map(p=>String(p.cat||"").split("、")[0]))].filter(Boolean).slice(0,8).join("、");
  const out=await llmOnce([{role:"system",content:"你是商科职业教育领域的政策检索助理。请基于你的知识，回忆梳理与用户现有政策相关、且与商科领域相关、现行有效、且尚不在用户库中的政策文件。要求：①只列你确知真实存在且现行有效的文件；②名称必须含文号，文号必须真实，绝对禁止编造；③最多 5 条；④只返回纯 JSON 数组。"},
- {role:"user",content:`现有政策库：\n${db.policies.map(p=>"- "+p.name).join("\n")||"（空）"}\n商科相关领域：${cats||"工商管理、人力资源管理、市场营销、物流管理、数字经济、数字贸易、创新创业"}\n返回 [{"name":"政策名称（含文号）","org":"发文单位","date":"时间如2023-05","keywords":"关键词、分隔","summary":"正文摘要300字内","usage":"适用场景"}]`}]);
+ {role:"user",content:`现有政策库：\n${db.policies.map(p=>"- "+p.name).join("\n")||"（空）"}\n商科相关领域：${cats||"工商管理、人力资源管理、市场营销、物流管理、数字经济、数字贸易、创新创业"}\n返回 [{"name":"政策名称（含文号）","org":"发文单位","date":"时间如2023-05","keywords":"关键词；用分号分隔","summary":"正文摘要300字内","usage":"适用场景"}]`}]);
  let n=0;for(const r of parseJsonArr(out)){const name=String(r.name||"").trim();if(!name||db.policies.some(p=>p.name===name))continue;
-  db.policies.push({id:uid(),name,org:String(r.org||""),date:String(r.date||""),keywords:String(r.keywords||""),summary:String(r.summary||""),usage:String(r.usage||"建设背景与政策依据章节引用"),flag:"blue",flagReason:"🆕 自动检索入库的新政策，请自行核实名称/文号/内容真伪后决定保留；未处理前生成台不可勾选。"});n++;}
+  db.policies.push({id:uid(),name,org:String(r.org||""),date:String(r.date||""),keywords:String(r.keywords||"").replace(/[,，、]+/g,"；"),summary:String(r.summary||""),usage:String(r.usage||"建设背景与政策依据章节引用"),flag:"blue",flagReason:"🆕 自动检索入库的新政策，请自行核实名称/文号/内容真伪后决定保留；未处理前生成台不可勾选。"});n++;}
  persist();renderAll();return n;}
 db.polScan=db.polScan||{on:false,time:"09:30",freq:"weekly",lastRun:0,logs:[]};
 function polScanModal(){const s=db.polScan;
