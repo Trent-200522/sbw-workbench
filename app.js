@@ -563,7 +563,7 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
   rules.push("正文章节结构必须严格跟随上传模版的章节标题与顺序（含各级标题编号样式），不得自行改用默认建议章节；");
   rules.push(tplHasAppx?"模版包含“附件”章节：正文中保留该章节标题（须位于全文最后一个章节位置，其后不得再写其他正文内容），但不要填写具体附件内容，系统会自动在该章节下填入所选产品核心参数表格；":"模版不含“附件”章节：正文中不要自行撰写“附件”章节，系统会在文末自动追加并附上所选产品核心参数表格；");}
  else rules.push("正文中不要自行撰写“附件”章节，系统会在文末自动附上所选产品核心参数表格；");
- rules.push("附件内容一律由系统在全文末尾自动追加：正文开头与中间不得出现任何附件标题或附件内容，尤其禁止在文首输出以“附件”“附件一：”等开头的行（如需提及，只在句内写“详见附件”即可）；不要自行输出“目录”区域：系统会自动提取正文一级（一、）与二级（（一））标题并在文首生成目录，附件/附表相关内容一律不得出现在正文目录与正文中，正文写到最后一个正文章节即结束；");
+ rules.push("附件内容一律由系统在全文末尾自动追加：正文开头与中间不得出现任何附件标题或附件内容，尤其禁止在文首输出以“附件”“附件一：”等开头的行（如需提及，只在句内写“详见附件”即可）；全文任何位置都不得输出“目录”区域（从文档标题直接开始正文），附件/附表相关内容一律不得出现在正文中，正文写到最后一个正文章节即结束；");
  if(db.train&&db.train.style&&db.train.on)rules.push(`以下写作规范由历史方案自动训练总结而来，请严格遵守：${db.train.style.slice(0,1500)}`);
  if(words.total||words.chapter||words.max)rules.push(`字数要求（硬性验收标准，必须严格执行）：全文不少于 ${words.total} 字${words.max?`，且全文不超过 ${words.max} 字（请在该上限内合理分配各章节篇幅）`:""}，且“一、/二、…”每个章节不少于 ${words.chapter} 字。请先按字数要求规划各章节篇幅再动笔，论证充分展开，用具体的建设内容、实施细节、数据与效益分析充实篇幅，严禁用空话套话或重复内容凑字数；`);
  if(hw.length)rules.push("用户勾选了硬件配置：须在“建设内容”章节单列硬件小节，并用 Markdown 表格列示（列：设备名称｜型号规格｜单位｜单价（万元）｜数量｜金额（万元）），并纳入预算明细；");
@@ -734,15 +734,15 @@ $("#btnGen").onclick=async()=>{
  const g=gatherGen();const ta=$("#genResult");
  const totSel=Math.round((g.prods.reduce((s,p)=>s+parseWan(p.price),0)+g.hw.reduce((s,h)=>s+(parseFloat(h.amount)||0),0))*100)/100;
  if(g.budget&&totSel>g.budget)toast(`⚠ 勾选产品+硬件参考合计 ${totSel} 万元，超过整体预算 ${g.budget} 万元；预算章节将按“分期实施”表述`);
- if(!db.llm.key){ta.value=compactText(insertToc(localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget)));syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);toast("未配置 API Key，已用本地模板拼装框架");return;}
+ if(!db.llm.key){ta.value=compactText(localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget));syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);toast("未配置 API Key，已用本地模板拼装框架");return;}
  const btn=$("#btnGen");const ac=new AbortController();genAbort=ac;btn.textContent="⏳ 连接模型中…（可点击取消）";ta.value="";
  let chars=0,got=false;const t0=Date.now();
  const tick=setInterval(()=>{const s=Math.round((Date.now()-t0)/1000);btn.textContent=`⏳ ${got?"生成中":"等待模型响应"}… ${s}s${chars?` · 已收 ${chars} 字`:""}（可点击取消）`;},500);
  const firstTo=setTimeout(()=>{if(!got)ac.abort();},120000);
  try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText,g.budget),t=>{got=true;chars+=t.length;ta.value+=t;ta.scrollTop=ta.scrollHeight;},ac.signal);
-  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);ta.value=compactText(insertToc(ta.value));updateChecklist();syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);
+  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);ta.value=compactText(ta.value);updateChecklist();syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);
   const cnt=ta.value.replace(/\s+/g,"").length;
-  toast(`生成完成，全文约 ${cnt} 字，用时 ${Math.round((Date.now()-t0)/1000)}s`+(g.words.total&&cnt<g.words.total?`；⚠ 未达最低字数要求 ${g.words.total} 字，建议重新生成或在修订对话框中要求扩写`:"（已自动插入目录、预算明细表与产品参数附件）"));}
+  toast(`生成完成，全文约 ${cnt} 字，用时 ${Math.round((Date.now()-t0)/1000)}s`+(g.words.total&&cnt<g.words.total?`；⚠ 未达最低字数要求 ${g.words.total} 字，建议重新生成或在修订对话框中要求扩写`:"（已自动插入预算明细表与产品参数附件）"));}
  catch(err){if(err.name==="AbortError"){ta.value+=(ta.value?"\n\n":"")+"【已取消或超时】"+(got?"已停止生成，上方已接收的内容仍可使用。":"2 分钟内未收到模型响应：多为模型服务繁忙（可稍后重试），或接口不支持流式输出/模型名称有误。");}
  else ta.value+=(ta.value?"\n\n":"")+"【生成失败】"+err.message+"\n请检查 API Key / 接口地址 / 模型名称；或清空 Key 后使用本地模板拼装。";}
  finally{clearInterval(tick);clearTimeout(firstTo);genAbort=null;btn.textContent="⚡ 生成初稿";}
@@ -774,7 +774,12 @@ $("#btnChatSend").onclick=sendChat;
 $("#chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}});
 
 /* ---------- 结果操作 ---------- */
-function cssFor(st){if(!st)return "";normStyle(st);const fam=st.latin?`'${st.latin}','${st.font}',serif`:`'${st.font}',serif`;const lh=st.lineUnit==="pt"?`${st.lineVal}pt`:String(st.lineVal||1);return `font-family:${fam};font-size:${SIZE_PT[st.size]||14}pt;${st.bold?"font-weight:bold;":""}text-align:${st.align};${st.indent?`text-indent:${st.indent}em;`:""}line-height:${lh};margin:${st.spaceBefore||0}pt 0 ${st.spaceAfter||0}pt 0;`;}
+/* 生成 Word 可识别的段落样式：首行缩进按字号换算为磅值、行距用百分比（固定值用磅值+exactly），避免 Word 忽略 em/无单位行高 */
+function cssFor(st){if(!st)return "";normStyle(st);const fam=st.latin?`'${st.latin}','${st.font}',serif`:`'${st.font}',serif`;
+ const pt=SIZE_PT[st.size]||14;
+ const lh=st.lineUnit==="pt"?`${st.lineVal}pt;mso-line-height-rule:exactly`:`${Math.round((st.lineVal||1)*100)}%`;
+ const indent=st.indent?`text-indent:${st.indent*pt}pt;`:"";
+ return `font-family:${fam};font-size:${pt}pt;${st.bold?"font-weight:bold;":""}text-align:${st.align};${indent}line-height:${lh};margin:${st.spaceBefore||0}pt 0 ${st.spaceAfter||0}pt 0;`;}
 function md2html(text,fmt){
  const S=k=>fmt?cssFor(fmt.styles[k]):"";
  const lines=esc(text).split(/\r?\n/);let out=[],tbl=[];
@@ -949,11 +954,11 @@ ${userTurns.slice(0,8000)}
 1. 将用户补充的信息准确填写进初稿中对应的章节位置，替换“（待核实…）”“（待补充…）”等占位内容；
 2. 逐条满足用户提出的其他修订要求；
 3. 保持初稿的章节结构、标题编号样式、预算明细表、附件内容与各类表格不变，不得删减章节与数据；
-4. 不输出目录区域（系统会自动生成），不输出任何解释性语言，直接输出终稿全文；全文不得输出空行。`;
+4. 不输出目录区域，不输出任何解释性语言，直接输出终稿全文；全文不得输出空行。`;
  let out="";
  try{await streamChat([{role:"system",content:sys},{role:"user",content:"请输出形成后的终稿全文。"}],c=>{out+=c;btn.textContent=`⏳ 正在形成终稿… 已收 ${out.length} 字`;});
   if(!out.trim())throw new Error("模型未返回内容");
-  out=compactText(insertToc(out));
+  out=compactText(out);
   $("#genResult").value=out;updateChecklist();
   db.final={text:out,time:Date.now()};persist();syncFinalUi();refreshPptOutline(true);
   toast(`终稿已形成（用时 ${Math.round((Date.now()-t0)/1000)}s）：修订内容已自动填入初稿对应位置，生成结果栏已更新，可继续微调后再次形成终稿`);
