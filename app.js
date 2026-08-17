@@ -895,14 +895,17 @@ async function zwAuthHeaders(){
 }
 /* 讯飞接口基址：优先走用户自建的转发服务（解决纯静态页面 CORS 拦截），未配置则直连官方接口 */
 function zwBase(){const p=(db.ppt.zwProxy||"").trim().replace(/\/+$/,"");return p||"https://zwapi.xfyun.cn";}
+/* 容错解析讯飞响应：正常返回 JSON；鉴权失败等异常时返回纯文本（如 Invalid AppId），需转成友好报错 */
+async function zwParse(res){const t=await res.text();
+ try{return JSON.parse(t);}catch(e){throw new Error(`讯飞智文返回异常（HTTP ${res.status}）：${t.slice(0,120)||"空响应"}（常见于 APPID/APIKey/APISecret 填写有误或与所开通服务不匹配）`);}}
 async function genZhiwenPpt(query,outlineText,onStatus){
  const res=await fetch(zwBase()+"/api/aippt/createByOutline",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,outline:outlineText,theme:db.ppt.zwTheme||"auto",language:"cn"})});
- const j=await res.json();
+ const j=await zwParse(res);
  if(j.code!==0)throw new Error("讯飞智文返回错误 "+j.code+"："+(j.desc||"请检查凭证与点量"));
  const sid=j.data.sid;onStatus("任务已创建，智文正在生成大纲与 PPT…");
  for(let i=0;i<200;i++){await new Promise(r=>setTimeout(r,3500));
   const pr=await fetch(zwBase()+"/api/aippt/progress?sid="+encodeURIComponent(sid),{headers:await zwAuthHeaders()});
-  const pj=await pr.json();const d=(pj&&pj.data)||{};
+  const pj=await zwParse(pr);const d=(pj&&pj.data)||{};
   if(pj.code!==0)throw new Error("进度查询失败："+pj.desc);
   if(d.errMsg)throw new Error("生成失败："+d.errMsg);
   onStatus(`智文生成中… ${d.process??0}%（30=大纲完成，70=PPT完成，100=可下载）`);
@@ -962,14 +965,34 @@ const ZW_WORKER=`export default{
   return o;
  }
 };`;
+/* 本地转发小服务（Node）：浏览器 → 127.0.0.1:8787 → zwapi.xfyun.cn，无需注册/域名，国内网络可用 */
+const ZW_PROXY_JS=`/* 讯飞智文本地转发小服务（与 sbw-workbench 平台配套）
+用法：命令行执行  node zw-proxy.js  ，保持窗口开着；
+然后在平台 PPT 生成台「转发服务地址」填入  http://127.0.0.1:8787  即可。 */
+const http=require("http"),https=require("https");
+const PORT=8787;
+const CORS={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"*","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Access-Control-Allow-Private-Network":"true"};
+http.createServer((req,res)=>{
+ for(const k in CORS)res.setHeader(k,CORS[k]);
+ if(req.method==="OPTIONS"){res.writeHead(204);res.end();return;}
+ const headers=Object.assign({},req.headers,{host:"zwapi.xfyun.cn"});
+ const up=https.request({host:"zwapi.xfyun.cn",path:req.url,method:req.method,headers},r=>{
+  res.writeHead(r.statusCode,r.headers);r.pipe(res);});
+ up.on("error",e=>{res.writeHead(502);res.end("转发失败："+e.message);});
+ req.pipe(up);
+}).listen(PORT,"127.0.0.1",()=>console.log("讯飞智文本地转发已启动：http://127.0.0.1:"+PORT+"（关闭本窗口即停止）"));`;
 function zwCorsModal(){
  openModal(`<h3>ℹ 讯飞智文跨域（CORS）说明与转发方案</h3>
  <p class="hint" style="margin-bottom:8px"><b>根因</b>：zwapi.xfyun.cn 是服务端接口，其响应未携带跨域许可（Access-Control-Allow-Origin），浏览器 CORS 安全策略禁止 GitHub Pages 这类纯静态页面在浏览器中直接调用它。这是浏览器安全机制，不是凭据或代码故障。</p>
- <p class="hint" style="margin-bottom:8px"><b>解决方案</b>：① 改用本地引擎（推荐）：完全离线免费，生成结果可编辑可下载；② 部署免费转发服务：在 Cloudflare Workers（免费额度足够）使用下方模板代码，部署后把得到的地址填入 PPT 生成台的「转发服务地址」；③ 若您有自己的服务器/云函数，也可自行实现同样的转发逻辑。</p>
+ <p style="margin:8px 0 4px"><b>方案一：本地转发小服务（推荐·不用注册·不用域名·国内网络可用）</b> <button class="btn btn-sm" id="mDlProxy" type="button">⬇ 下载 zw-proxy.js</button> <button class="btn btn-sm" id="mCopyProxy" type="button">⧉ 复制脚本</button></p>
+ <p class="hint" style="margin-bottom:4px">适合 Cloudflare workers.dev 在国内无法访问的情况。只需 3 步：① 点上方按钮下载 zw-proxy.js 到任意文件夹（需已安装 Node.js）；② 命令行进入该文件夹执行 <code>node zw-proxy.js</code>，看到“已启动”后保持窗口开着；③ 回到 PPT 生成台，「转发服务地址」填 <code>http://127.0.0.1:8787</code> 再点生成。仅在本机运行，不向任何第三方暴露凭据。</p>
+ <p class="hint" style="margin-bottom:8px"><b>其他方案</b>：改用本地引擎（完全离线免费，生成结果可编辑可下载）；部署 Cloudflare Workers 转发（国外网络可用，模板见下方；注意 workers.dev 域名在国内部分网络无法访问，如有自己的域名可在 Worker 设置中绑定自定义域）；自有服务器/云函数自行实现同样转发逻辑。</p>
  <p style="margin:8px 0 4px"><b>Cloudflare Worker 转发模板</b>（注册 Cloudflare → Workers 与路由 → 创建 Worker → 粘贴此代码并部署） <button class="btn btn-sm" id="mCopyWorker" type="button">⧉ 复制模板代码</button></p>
  <div class="rte" style="max-height:220px"><pre style="font-size:12px;white-space:pre-wrap;margin:0">${esc(ZW_WORKER)}</pre></div>
- <p class="hint" style="margin-top:8px">部署成功后会得到类似 https://your-name.workers.dev 的地址，复制填入 PPT 生成台「转发服务地址」并保存，讯飞智文调用即改经该地址中转，不再被跨域拦截。注意：转发请求会携带您的凭据，转发服务请只部署在自己可信的账号上。</p>
+ <p class="hint" style="margin-top:8px">部署成功后会得到类似 https://your-name.workers.dev 的地址，复制填入 PPT 生成台「转发服务地址」并保存，讯飞智文调用即改经该地址中转，不再被跨域拦截。注意：转发请求会携带您的凭据，转发服务请只部署在自己可信的账号/电脑上。</p>
  <div class="acts"><button class="btn btn-primary" id="mOk">知道了</button></div>`);
+ $("#mDlProxy").onclick=()=>{const blob=new Blob([ZW_PROXY_JS],{type:"text/javascript"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="zw-proxy.js";a.click();toast("已下载 zw-proxy.js：命令行执行 node zw-proxy.js 启动，转发地址填 http://127.0.0.1:8787");};
+ $("#mCopyProxy").onclick=()=>copyText(ZW_PROXY_JS);
  $("#mCopyWorker").onclick=()=>copyText(ZW_WORKER);
  $("#mOk").onclick=closeModal;}
 $("#btnZwCors").onclick=zwCorsModal;
