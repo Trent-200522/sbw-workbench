@@ -18,13 +18,25 @@ const FONTS=["仿宋","黑体","楷体","宋体","Times New Roman","Arial","微�
 const SIZES=["初号","小初","一号","小一","二号","小二","三号","小三","四号","小四","五号"];
 const SIZE_PT={"初号":42,"小初":36,"一号":26,"小一":24,"二号":22,"小二":18,"三号":16,"小三":15,"四号":14,"小四":12,"五号":10.5};
 const ALIGNS=[["left","左对齐"],["center","居中"],["right","右对齐"],["justify","两端对齐"]];
-const LINES=[["单倍","单倍"],["1.5倍","1.5倍"],["2倍","2倍"],["固定28磅","固定28磅"]];
+const LINE_UNITS=[["times","倍（多倍行距）"],["pt","磅（固定值）"]];
 const STRUCT_DEF=`一、××××××　　　　　（一级标题，章）
 （一）××××××　　　（二级标题，节）
 1. ××××××　　　　　（三级标题，目）
 （1）××××××　　　（四级标题，子目）
 ① ××××××　　　　 （五级，少见，多用于注释型列举）`;
-function defStyles(){return{h1:{font:"黑体",size:"三号",bold:1,align:"left",indent:2,line:"固定28磅",space:0},h2:{font:"楷体",size:"三号",bold:1,align:"left",indent:2,line:"固定28磅",space:0},h3:{font:"仿宋",size:"三号",bold:1,align:"left",indent:2,line:"固定28磅",space:0},h4:{font:"仿宋",size:"三号",bold:0,align:"left",indent:2,line:"固定28磅",space:0},h5:{font:"仿宋",size:"三号",bold:0,align:"left",indent:2,line:"固定28磅",space:0},body:{font:"仿宋",size:"三号",bold:0,align:"justify",indent:2,line:"固定28磅",space:0},tbTitle:{font:"黑体",size:"小四",bold:1,align:"center",indent:0,line:"单倍",space:3},table:{font:"宋体",size:"小四",bold:0,align:"center",indent:0,line:"单倍",space:0},fig:{font:"楷体",size:"小四",bold:0,align:"center",indent:0,line:"单倍",space:3}};}
+function defStyles(){return{h1:{font:"黑体",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h2:{font:"楷体",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h3:{font:"仿宋",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h4:{font:"仿宋",latin:"",size:"三号",bold:0,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h5:{font:"仿宋",latin:"",size:"三号",bold:0,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},body:{font:"仿宋",latin:"Times New Roman",size:"三号",bold:0,align:"justify",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},tbTitle:{font:"黑体",latin:"",size:"小四",bold:1,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:3,spaceAfter:3},table:{font:"宋体",latin:"Times New Roman",size:"小四",bold:0,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:0,spaceAfter:0},fig:{font:"楷体",latin:"",size:"小四",bold:0,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:3,spaceAfter:3}};}
+
+/* 旧格式兼容归一：老数据的 line（单倍/1.5倍/2倍/固定28磅）→ lineUnit+lineVal；space → spaceBefore/spaceAfter */
+const LINE_OLD={"单倍":["times",1],"1.5倍":["times",1.5],"2倍":["times",2],"固定28磅":["pt",28]};
+function normStyle(st){
+ if(!st||typeof st!="object")return st;
+ if(st.lineUnit===undefined){const old=LINE_OLD[st.line];if(old){st.lineUnit=old[0];st.lineVal=old[1];}else{st.lineUnit="times";st.lineVal=1;}}
+ if(st.spaceBefore===undefined)st.spaceBefore=Number(st.space)||0;
+ if(st.spaceAfter===undefined)st.spaceAfter=Number(st.space)||0;
+ if(st.latin===undefined)st.latin="";
+ return st;
+}
+function lineText(st){if(!st)return"";normStyle(st);return st.lineUnit==="pt"?`固定${st.lineVal}磅`:`${st.lineVal}倍`;}
 
 /* ---------- 数据与预置 ---------- */
 const LS="sbw_v1";
@@ -42,7 +54,7 @@ function seed(){
   {id:"h2",seed:1,name:"学生电脑",model:"i5-12400/8G/256G SSD/21.5寸显示器",unit:"套",price:0.66,qty:60,amount:39.6},
   {id:"h3",seed:1,name:"投影仪",model:"激光投影 4500流明/含幕布吊架",unit:"台",price:1.3,qty:2,amount:2.6},
   {id:"h4",seed:1,name:"服务器",model:"2×至强银牌4314/64G/4×1.2T SAS",unit:"台",price:2.21,qty:2,amount:4.42}];
- const s2=defStyles();Object.values(s2).forEach(v=>{v.size="小四";v.line="1.5倍";});s2.body.font="微软雅黑";s2.h1.font="黑体";s2.h2.font="黑体";s2.h3.font="微软雅黑";
+ const s2=defStyles();Object.values(s2).forEach(v=>{v.size="小四";v.lineUnit="times";v.lineVal=1.5;});s2.body.font="微软雅黑";s2.h1.font="黑体";s2.h2.font="黑体";s2.h3.font="微软雅黑";
  return{products,hardware,
  proposals:[
   {id:"s1",seed:1,title:"新商科实验教学中心建设项目申报书",type:"项目申报书",client:"某财经大学经济管理学院",year:"2025",keypoints:"以“数智化转型”为主线；突出跨专业实训与虚拟仿真；申报省级实验教学示范中心。",content:"一、项目背景…\n二、建设基础…\n三、建设内容…\n四、预算与绩效目标…"},
@@ -76,6 +88,7 @@ if(!db||!Array.isArray(db.products)){db=seed();localStorage.setItem(LS,JSON.stri
 function persist(){try{localStorage.setItem(LS,JSON.stringify(db));return true;}catch(e){alert("保存失败：浏览器本地存储空间已满（localStorage 超限），本次内容未写入。\n建议：①删除方案文库/政策资料库中导入了完整长文档的条目（占用空间最大）；②或先点顶部「导出 JSON」备份，再「清空全部数据」后重新导入精简内容。\n当前弹窗内容仍保留，可先复制正文到本地再处理。");return false;}}
 db.llm=db.llm||{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};
 db.ppt=db.ppt||{engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto"};
+db.formats.forEach(f=>{if(f&&f.styles)for(const k in f.styles)normStyle(f.styles[k]);});
 if(!Array.isArray(db.hardware)||!db.hardware.length||(db.hardware[0]&&db.hardware[0].model===undefined))db.hardware=seed().hardware;
 if(!Array.isArray(db.formats)||!db.formats.length)db.formats=seed().formats;
 if(!Array.isArray(db.skills)||!db.skills.length)db.skills=seed().skills;
@@ -172,7 +185,7 @@ function renderFormats(){
   return `<div class="card item">
   <div class="head"><b>${esc(f.name)}</b><span class="tag">格式</span></div>
   <div class="row"><span class="k">一级标题：</span>${esc(h.font||"")} ${esc(h.size||"")}${h.bold?" 加粗":""}</div>
-  <div class="row"><span class="k">正文：</span>${esc(b.font||"")} ${esc(b.size||"")} · ${esc(b.line||"")} · ${esc(b.align||"")}</div>
+   <div class="row"><span class="k">正文：</span>${esc(b.font||"")} ${esc(b.size||"")} · ${esc(lineText(b))} · ${esc(b.align||"")}</div>
   <div class="row" style="white-space:pre-line;color:#6b7280;font-size:12px">${esc((f.structure||"").split("\n").slice(0,3).join("\n"))}…</div>
   <div class="acts"><button class="btn btn-sm" data-act="edit" data-kind="format" data-id="${f.id}">✎ 编辑</button>
   <button class="btn btn-sm btn-danger" data-act="del" data-kind="format" data-id="${f.id}">🗑 删除</button></div></div>`;}).join("")||EMPTY;
@@ -312,13 +325,18 @@ function hwForm(id){
   if(!persist())return;closeModal();renderAll();toast("已保存");};
 }
 function fmtRow(key,label,st){
+ st=normStyle(st)||defStyles()[key];
+ const latinOpts=["同中文字体",...FONTS];
  return `<div class="fmtrow"><b>${label}</b>
  <select id="fs_${key}_font">${FONTS.map(f=>`<option ${st.font===f?"selected":""}>${f}</option>`).join("")}</select>
+ <select id="fs_${key}_latin" title="数字、英文字体">${latinOpts.map(f=>`<option ${st.latin===(f==="同中文字体"?"":f)?"selected":""}>${f}</option>`).join("")}</select>
  <select id="fs_${key}_size">${SIZES.map(s=>`<option ${st.size===s?"selected":""}>${s}</option>`).join("")}</select>
  <select id="fs_${key}_align">${ALIGNS.map(a=>`<option value="${a[0]}" ${st.align===a[0]?"selected":""}>${a[1]}</option>`).join("")}</select>
- <select id="fs_${key}_line">${LINES.map(l=>`<option value="${l[0]}" ${st.line===l[0]?"selected":""}>${l[1]}</option>`).join("")}</select>
+ <select id="fs_${key}_lineUnit">${LINE_UNITS.map(u=>`<option value="${u[0]}" ${st.lineUnit===u[0]?"selected":""}>${u[1]}</option>`).join("")}</select>
+ <input id="fs_${key}_lineVal" type="number" min="0" step="0.1" value="${st.lineVal}" title="行距数值">
  <select id="fs_${key}_indent"><option value="0" ${!st.indent?"selected":""}>无</option><option value="2" ${st.indent?"selected":""}>2字符</option></select>
- <select id="fs_${key}_space">${[0,3,6,12].map(s=>`<option value="${s}" ${st.space===s?"selected":""}>${s}pt</option>`).join("")}</select>
+ <input id="fs_${key}_spaceBefore" type="number" min="0" step="1" value="${st.spaceBefore}" title="段前间距（磅）">
+ <input id="fs_${key}_spaceAfter" type="number" min="0" step="1" value="${st.spaceAfter}" title="段后间距（磅）">
  <input type="checkbox" id="fs_${key}_bold" ${st.bold?"checked":""} title="加粗"></div>`;
 }
 function formatForm(id){
@@ -327,13 +345,13 @@ function formatForm(id){
  openModal(`<h3>${id?"编辑":"新增"}格式</h3>
  <div class="field"><label>格式名称 *</label><input id="mName" value="${esc(f.name)}" placeholder="如：标准公文格式（三号仿宋）"></div>
  <div class="field"><label>结构格式（标题层级）</label><textarea id="mStruct" style="min-height:110px">${esc(f.structure||STRUCT_DEF)}</textarea></div>
- <div class="field"><label>各级元素格式（字体 / 字号 / 对齐 / 行距 / 首行缩进 / 段距 / 加粗）</label>
- <div class="fmt-head"><span>元素</span><span>字体</span><span>字号</span><span>对齐</span><span>行距</span><span>首行缩进</span><span>段前/后</span><span>加粗</span></div>
+ <div class="field"><label>各级元素格式（字体 / 数字英文字体 / 字号 / 对齐 / 行距单位+数值 / 首行缩进 / 段前 / 段后 / 加粗）</label>
+ <div class="fmt-head"><span>元素</span><span>字体</span><span>数字英文</span><span>字号</span><span>对齐</span><span>行距单位</span><span>行距值</span><span>缩进</span><span>段前pt</span><span>段后pt</span><span>加粗</span></div>
  ${FMT_ELS.map(([k,l])=>fmtRow(k,l,st[k]||defStyles()[k])).join("")}</div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写格式名称");return;}
-  const styles={};FMT_ELS.forEach(([k])=>{styles[k]={font:$(`#fs_${k}_font`).value,size:$(`#fs_${k}_size`).value,align:$(`#fs_${k}_align`).value,line:$(`#fs_${k}_line`).value,indent:parseInt($(`#fs_${k}_indent`).value,10)||0,space:parseInt($(`#fs_${k}_space`).value,10)||0,bold:$(`#fs_${k}_bold`).checked?1:0};});
+  const styles={};FMT_ELS.forEach(([k])=>{const latin=$(`#fs_${k}_latin`).value;styles[k]=normStyle({font:$(`#fs_${k}_font`).value,latin:latin==="同中文字体"?"":latin,size:$(`#fs_${k}_size`).value,align:$(`#fs_${k}_align`).value,lineUnit:$(`#fs_${k}_lineUnit`).value,lineVal:parseFloat($(`#fs_${k}_lineVal`).value)||1,indent:parseInt($(`#fs_${k}_indent`).value,10)||0,spaceBefore:parseInt($(`#fs_${k}_spaceBefore`).value,10)||0,spaceAfter:parseInt($(`#fs_${k}_spaceAfter`).value,10)||0,bold:$(`#fs_${k}_bold`).checked?1:0});});
   const data={name,structure:$("#mStruct").value,styles};
   if(id)Object.assign(f,data);else db.formats.push({id:uid(),...data});
   if(!persist())return;closeModal();renderAll();toast("已保存，可在生成台套用");};
@@ -487,7 +505,7 @@ $("#fMajor").addEventListener("input",()=>{autoMatchProducts();autoMatchPolicies
 $("#btnPolMatch").onclick=()=>{polUser.clear();prodUser.clear();autoMatchProducts();autoMatchPolicies();syncAllGenSections();toast("已按专业重新智能匹配产品与政策");};
 /* 备份导入导出与清理 */
 function exportJson(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="申报方案工作台备份_"+todayStr()+".json";a.click();toast("已导出备份");}
-function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];if(!db.ppt)db.ppt={engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto"};if(!db.llm)db.llm={provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
+function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(Array.isArray(db.formats))db.formats.forEach(f=>{if(f&&f.styles)for(const k in f.styles)normStyle(f.styles[k]);});if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];if(!db.ppt)db.ppt={engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto"};if(!db.llm)db.llm={provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
 $("#btnExport").onclick=exportJson;$("#btnExport2").onclick=exportJson;
 $("#btnImportTop").onclick=()=>$("#importFile").click();$("#btnImport2").onclick=()=>$("#importFile").click();
 $("#importFile").onchange=e=>{if(e.target.files[0])importJson(e.target.files[0]);e.target.value="";};
@@ -520,7 +538,7 @@ $("#btnTestModel").onclick=async()=>{
 /* ---------- 生成：提示词 + 流式调用 + 本地模板 ---------- */
 function parseWan(s){const m=String(s||"").match(/(\d+(?:\.\d+)?)\s*万/);if(m)return parseFloat(m[1]);const m2=String(s||"").replace(/[,，]/g,"").match(/(\d{4,7})(?!\d)/);return m2?Math.round(parseInt(m2,10)/10000):0;}
 function wrapName(n){return /[《〈]/.test(n)?n:"《"+n+"》";}
-function fmtSpecText(f){if(!f)return "";const L=FMT_ELS.map(([k,l])=>{const s=f.styles[k]||{};return `${l}：${s.font} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}字符 行距${s.line} 段前段后${s.space||0}pt`;});return `结构格式：\n${f.structure||""}\n各级格式：${L.join("；")}`;}
+function fmtSpecText(f){if(!f)return "";const L=FMT_ELS.map(([k,l])=>{const s=normStyle(f.styles[k])||{};return `${l}：${s.font}${s.latin?`（数字英文用${s.latin}）`:""} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}字符 行距${lineText(s)} 段前${s.spaceBefore||0}pt 段后${s.spaceAfter||0}pt`;});return `结构格式：\n${f.structure||""}\n各级格式：${L.join("；")}`;}
 function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,skills,fmt,tplText,budget){
  const rules=["使用正式书面语，标题层级用“一、/（一）/1./（1）/①”五级；",
  "政策依据必须自然融入行文：把用户勾选政策的要点有机编织进“建设背景与政策依据”等相关章节的论述中，在段落行文内顺势引用政策名称与文号（如“根据《××》（×发〔20××〕×号）关于……的要求，本项目……”），让政策精神与项目论证浑然一体；严禁采用“政策一：……；政策二：……”的清单式罗列，严禁单独设立仅逐条列举政策名称与要点的段落，不得编造任何政策文件名或文号；",
@@ -708,7 +726,7 @@ $("#btnChatSend").onclick=sendChat;
 $("#chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}});
 
 /* ---------- 结果操作 ---------- */
-function cssFor(st){if(!st)return "";return `font-family:'${st.font}',serif;font-size:${SIZE_PT[st.size]||14}pt;${st.bold?"font-weight:bold;":""}text-align:${st.align};${st.indent?`text-indent:${st.indent}em;`:""}line-height:${st.line==="固定28磅"?"28pt":st.line==="单倍"?"normal":st.line==="1.5倍"?"1.5":"2"};margin:${st.space||0}pt 0;`;}
+function cssFor(st){if(!st)return "";normStyle(st);const fam=st.latin?`'${st.latin}','${st.font}',serif`:`'${st.font}',serif`;const lh=st.lineUnit==="pt"?`${st.lineVal}pt`:String(st.lineVal||1);return `font-family:${fam};font-size:${SIZE_PT[st.size]||14}pt;${st.bold?"font-weight:bold;":""}text-align:${st.align};${st.indent?`text-indent:${st.indent}em;`:""}line-height:${lh};margin:${st.spaceBefore||0}pt 0 ${st.spaceAfter||0}pt 0;`;}
 function md2html(text,fmt){
  const S=k=>fmt?cssFor(fmt.styles[k]):"";
  const lines=esc(text).split(/\r?\n/);let out=[],tbl=[];
