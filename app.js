@@ -79,7 +79,8 @@ function seed(){
   {id:"k3",seed:1,name:"报价方案撰写",desc:"侧重预算明细、价格依据与商务条款。",prompt:"以报价方案体例撰写，预算明细逐项列示（名称/型号/单位/单价/数量/金额），合计等于分项之和，并附价格依据与商务说明。"},
   {id:"k4",seed:1,name:"政策论证强化",desc:"在背景章节自然融入并深度论证勾选政策，强化立项依据。",prompt:"在“项目背景与政策依据”等章节将勾选政策自然融入行文：对重点政策在段落内引用政策原文要点并展开“政策要求→本项目如何响应”的深度论证，引用必须含文件名与文号，不得编造；但严禁将政策做成逐条罗列的清单式段落。"},
  {id:"k5",seed:1,name:"去 AI 味润色",desc:"降低生成文本的 AI 感，更像人工撰写的正式文稿。",prompt:"全文须降低 AI 痕迹，模拟资深方案撰写人员的真实笔触：①删除或改写“综上所述、值得注意的是、首先…其次…最后、总而言之、不难发现、赋能、助力、打造、构建、旨在、具有重要意义、发挥着重要作用”等高频套话；②不堆砌排比句与对仗短语，同一段内不重复使用同一句式；③少用空洞形容词与连续破折号、感叹号，论证用具体事实、数据与政策依据展开；④句子长短交错、自然衔接，允许朴实的过渡；⑤不得因润色而删减章节、要点与预算数据，结构与内容必须完整保留。"},
-  {id:"k6",seed:1,name:"按勾选政策撰写（内容可增减）",desc:"政策章节按用户在生成台勾选的政策文件书写，内容可适当增减。",prompt:"生成初稿时，政策相关内容（项目背景与政策依据等章节）必须以用户在方案生成台勾选的政策文件为准进行书写：将勾选政策的名称、文号、发文单位与要点自然融入行文并展开论证，不做逐条罗列；内容可适当增减——与项目关联度高的政策展开写（政策要求→本项目如何响应），关联度弱的可概括一句或不写，使篇幅与论证重心匹配项目实际；但严禁编造任何政策名称与文号，严禁引用用户未勾选的政策。"}],
+  {id:"k6",seed:1,name:"按勾选政策撰写（内容可增减）",desc:"政策章节按用户在生成台勾选的政策文件书写，内容可适当增减。",prompt:"生成初稿时，政策相关内容（项目背景与政策依据等章节）必须以用户在方案生成台勾选的政策文件为准进行书写：将勾选政策的名称、文号、发文单位与要点自然融入行文并展开论证，不做逐条罗列；内容可适当增减——与项目关联度高的政策展开写（政策要求→本项目如何响应），关联度弱的可概括一句或不写，使篇幅与论证重心匹配项目实际；但严禁编造任何政策名称与文号，严禁引用用户未勾选的政策。"},
+  {id:"k7",seed:1,name:"禁用无序列表符号（排版铁律）",desc:"绝对禁止使用 -、*、• 等无序列表符号，内容必须以自然段落或有序编号呈现。",prompt:"排版铁律：全文绝对禁止使用“—”“*”“•”“·”“▪”“+”等任何无序列表符号或特殊字符进行条目罗列，绝对禁止使用 Markdown 无序列表语法（行首以 - 或 * 开头的列表项）。凡需分条表述的内容，一律采用有序编号（1./2./3.，或（1）（2），或①②）或标准自然段落书写，每条为完整句子、融入行文；该要求为硬性验收标准，违反即不合格必须重写。"}],
  fundOptions:["科研与教改项目经费","校企合作与经营收入","其他"],
  llm:{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""}};}
 let db=null;
@@ -87,7 +88,9 @@ try{db=JSON.parse(localStorage.getItem(LS));}catch(e){}
 if(!db||!Array.isArray(db.products)){db=seed();localStorage.setItem(LS,JSON.stringify(db));}
 function persist(){try{localStorage.setItem(LS,JSON.stringify(db));return true;}catch(e){alert("保存失败：浏览器本地存储空间已满（localStorage 超限），本次内容未写入。\n建议：①删除方案文库/政策资料库中导入了完整长文档的条目（占用空间最大）；②或先点顶部「导出 JSON」备份，再「清空全部数据」后重新导入精简内容。\n当前弹窗内容仍保留，可先复制正文到本地再处理。");return false;}}
 db.llm=db.llm||{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};
-db.ppt=db.ppt||{engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwProxy:"",zwTheme:"auto"};
+db.ppt=db.ppt||{engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto",zwProxy:""};
+if(db.ppt.zwProxy===undefined)db.ppt.zwProxy="";
+db.final=db.final||{text:"",time:0};
 db.formats.forEach(f=>{if(f&&f.styles)for(const k in f.styles)normStyle(f.styles[k]);});
 if(!Array.isArray(db.hardware)||!db.hardware.length||(db.hardware[0]&&db.hardware[0].model===undefined))db.hardware=seed().hardware;
 if(!Array.isArray(db.formats)||!db.formats.length)db.formats=seed().formats;
@@ -260,7 +263,7 @@ function syncSkillDesc(){const ks=$$(".gskill:checked").map(c=>db.skills.find(x=
 function syncLlmUi(){$("#llmProvider").value=db.llm.provider||"deepseek";$("#llmBase").value=db.llm.baseUrl||"";$("#llmModel").value=db.llm.model||"";$("#llmKey").value=db.llm.key||"";syncModelList();}
 const MODEL_HINTS={deepseek:["deepseek-chat（对话模型，性价比高）","deepseek-reasoner（深度推理）"],qwen:["qwen3-max（旗舰最强，长文推荐）","qwen-plus（均衡推荐）","qwen-turbo（快速）","qwen-max（旗舰别名）","qwen-long（超长文本）"],doubao:["doubao-1-5-pro-32k（推荐）","doubao-1-5-lite-32k（快速）","doubao-seed-1-6-250615"],custom:[]};
 function syncModelList(){$("#modelList").innerHTML=(MODEL_HINTS[db.llm.provider]||[]).map(m=>`<option value="${m.split("（")[0]}">${m}</option>`).join("");}
-function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();syncPptUi();}
+function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();syncPptUi();syncFinalUi();syncPptSrcStatus();}
 
 /* ---------- 弹窗与表单 ---------- */
 function openModal(html){$("#modalBox").innerHTML=html;$("#mask").hidden=false;}
@@ -365,9 +368,7 @@ const EXTRA_SKILLS=[
  {name:"Coze 方案生成 Bot",desc:"移植自 Coze 智能体：先提纲后分章生成的工作流",
   prompt:"你是“方案大师”Bot，按以下工作流执行：第一步先输出章节提纲（不写正文）等待用户确认；第二步用户确认后逐章生成，每章先引政策依据、再述建设内容、最后列该章预算；第三步全篇完成后输出预算汇总表。"},
  {name:"Dify 知识库问答约束",desc:"移植自 Dify 知识库节点：只依据已给材料回答",
-  prompt:"回答时优先引用用户提供的材料（附件、已勾选的政策、产品参数）；材料中找不到依据时，明确说明“知识库中未找到”，不得自行杜撰数据或政策文号。"},
- {name:"禁用无序列表符号（排版铁律）",desc:"绝对禁止 -、*、• 等特殊字符，输出必须为自然段或有序编号",
-  prompt:"排版铁律（绝对禁止，最高优先级）：全文绝对禁止使用“-”“*”“•”“●”“▪”“·”等任何无序列表特殊符号/特殊字符，绝对禁止以项目符号（bullet）形式罗列内容；所有内容必须以规范的自然段落行文，或使用“一、/（一）/1./（1）/①”有序编号结构呈现。需要列举时，在段落内用“第一、第二、第三”或“一是、二是、三是”等序词连贯表述，或以有序编号分层组织；出现任何无序列表符号即视为不合格，必须改写。"}
+  prompt:"回答时优先引用用户提供的材料（附件、已勾选的政策、产品参数）；材料中找不到依据时，明确说明“知识库中未找到”，不得自行杜撰数据或政策文号。"}
 ];
 function skillForm(id){
  const k=id?db.skills.find(x=>x.id===id):{name:"",desc:"",prompt:""};
@@ -507,7 +508,7 @@ $("#fMajor").addEventListener("input",()=>{autoMatchProducts();autoMatchPolicies
 $("#btnPolMatch").onclick=()=>{polUser.clear();prodUser.clear();autoMatchProducts();autoMatchPolicies();syncAllGenSections();toast("已按专业重新智能匹配产品与政策");};
 /* 备份导入导出与清理 */
 function exportJson(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="申报方案工作台备份_"+todayStr()+".json";a.click();toast("已导出备份");}
-function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(Array.isArray(db.formats))db.formats.forEach(f=>{if(f&&f.styles)for(const k in f.styles)normStyle(f.styles[k]);});if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];if(!db.ppt)db.ppt={engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwProxy:"",zwTheme:"auto"};if(!db.llm)db.llm={provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
+function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(Array.isArray(db.formats))db.formats.forEach(f=>{if(f&&f.styles)for(const k in f.styles)normStyle(f.styles[k]);});if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];if(!db.ppt)db.ppt={engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto"};if(!db.llm)db.llm={provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
 $("#btnExport").onclick=exportJson;$("#btnExport2").onclick=exportJson;
 $("#btnImportTop").onclick=()=>$("#importFile").click();$("#btnImport2").onclick=()=>$("#importFile").click();
 $("#importFile").onchange=e=>{if(e.target.files[0])importJson(e.target.files[0]);e.target.value="";};
@@ -721,13 +722,13 @@ $("#btnGen").onclick=async()=>{
  const g=gatherGen();const ta=$("#genResult");
  const totSel=Math.round((g.prods.reduce((s,p)=>s+parseWan(p.price),0)+g.hw.reduce((s,h)=>s+(parseFloat(h.amount)||0),0))*100)/100;
  if(g.budget&&totSel>g.budget)toast(`⚠ 勾选产品+硬件参考合计 ${totSel} 万元，超过整体预算 ${g.budget} 万元；预算章节将按“分期实施”表述`);
- if(!db.llm.key){ta.value=insertToc(localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget));toast("未配置 API Key，已用本地模板拼装框架");return;}
+ if(!db.llm.key){ta.value=insertToc(localDraft(g.project,g.school,g.type,g.prods,g.hw,g.pols,g.words,g.funds,g.budget));syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);toast("未配置 API Key，已用本地模板拼装框架");return;}
  const btn=$("#btnGen");const ac=new AbortController();genAbort=ac;btn.textContent="⏳ 连接模型中…（可点击取消）";ta.value="";
  let chars=0,got=false;const t0=Date.now();
  const tick=setInterval(()=>{const s=Math.round((Date.now()-t0)/1000);btn.textContent=`⏳ ${got?"生成中":"等待模型响应"}… ${s}s${chars?` · 已收 ${chars} 字`:""}（可点击取消）`;},500);
  const firstTo=setTimeout(()=>{if(!got)ac.abort();},120000);
  try{await streamChat(buildMessages(g.project,g.school,g.major,g.type,g.prods,g.hw,g.pols,g.tpls,g.words,g.funds,g.skills,g.fmt,g.tplText,g.budget),t=>{got=true;chars+=t.length;ta.value+=t;ta.scrollTop=ta.scrollHeight;},ac.signal);
-  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);ta.value=insertToc(ta.value);updateChecklist();
+  ta.value=insertBudgetTable(ta.value,g.prods,g.hw,g.budget);ta.value=attachAppendix(ta.value,g.prods);ta.value=insertToc(ta.value);updateChecklist();syncPptSrcStatus();if(!$("#pptOutline").value.trim())refreshPptOutline(true);
   const cnt=ta.value.replace(/\s+/g,"").length;
   toast(`生成完成，全文约 ${cnt} 字，用时 ${Math.round((Date.now()-t0)/1000)}s`+(g.words.total&&cnt<g.words.total?`；⚠ 未达最低字数要求 ${g.words.total} 字，建议重新生成或在修订对话框中要求扩写`:"（已自动插入目录、预算明细表与产品参数附件）"));}
  catch(err){if(err.name==="AbortError"){ta.value+=(ta.value?"\n\n":"")+"【已取消或超时】"+(got?"已停止生成，上方已接收的内容仍可使用。":"2 分钟内未收到模型响应：多为模型服务繁忙（可稍后重试），或接口不支持流式输出/模型名称有误。");}
@@ -791,18 +792,21 @@ $("#btnSaveProp").onclick=()=>{const t=$("#genResult").value.trim();if(!t){alert
 $("#btnWord").onclick=()=>{const text=$("#genResult").value;if(!text.trim()){alert("请先生成内容");return;}
  const fmt=db.formats.find(f=>f.id===$("#fFormat").value)||null;
  const title=($("#fProject").value.trim()||"方案")+"_"+$("#fType").value;
- /* 纯文本目录替换为 Word TOC 域：插在文档标题之后 */
+ exportWordDoc(text,title,fmt);
+ toast(fmt?`已导出 Word（套用格式：${fmt.name}）`:"已导出 Word");};
+/* 统一的 Word 导出管线：纯文本目录替换为 TOC 域、套用格式样式 */
+function exportWordDoc(text,fileName,fmt){
  let bodyHtml=md2html(stripTocBlock(text.split(/\r?\n/)).join("\n"),fmt);
  const tocField=wordTocField(fmt);
  if(/^<h1/.test(bodyHtml)){const p=bodyHtml.indexOf("</h1>")+5;bodyHtml=bodyHtml.slice(0,p)+tocField+bodyHtml.slice(p);}
  else bodyHtml=tocField+bodyHtml;
- const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(title)}</title></head><body>${bodyHtml}</body></html>`;
+ const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(fileName)}</title></head><body>${bodyHtml}</body></html>`;
  const blob=new Blob(["\ufeff",html],{type:"application/msword"});
- const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title+".doc";a.click();toast(fmt?`已导出 Word（套用格式：${fmt.name}）`:"已导出 Word");};
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fileName+".doc";a.click();}
 
 /* ---------- PPT 生成（本地引擎 + 讯飞智文） ---------- */
-function syncPptUi(){if(!$("#pptEngine"))return;$("#pptEngine").value=db.ppt.engine||"local";$("#zwAppId").value=db.ppt.zwAppId||"";$("#zwApiKey").value=db.ppt.zwApiKey||"";$("#zwApiSecret").value=db.ppt.zwApiSecret||"";$("#zwProxy").value=db.ppt.zwProxy||"";$("#zwTheme").value=db.ppt.zwTheme||"auto";$("#zwCfg").style.display=db.ppt.engine==="zhiwen"?"":"none";}
-["#pptEngine","#zwAppId","#zwApiKey","#zwApiSecret","#zwProxy","#zwTheme"].forEach(s=>{const el=$(s);if(el)el.addEventListener("change",()=>{db.ppt.engine=$("#pptEngine").value;db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();db.ppt.zwProxy=$("#zwProxy").value.trim();db.ppt.zwTheme=$("#zwTheme").value;persist();syncPptUi();});});
+function syncPptUi(){if(!$("#pptEngine"))return;$("#pptEngine").value=db.ppt.engine||"local";$("#zwAppId").value=db.ppt.zwAppId||"";$("#zwApiKey").value=db.ppt.zwApiKey||"";$("#zwApiSecret").value=db.ppt.zwApiSecret||"";$("#zwTheme").value=db.ppt.zwTheme||"auto";$("#zwProxy").value=db.ppt.zwProxy||"";$("#zwCfg").style.display=db.ppt.engine==="zhiwen"?"":"none";}
+["#pptEngine","#zwAppId","#zwApiKey","#zwApiSecret","#zwTheme","#zwProxy"].forEach(s=>{const el=$(s);if(el)el.addEventListener("change",()=>{db.ppt.engine=$("#pptEngine").value;db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();db.ppt.zwTheme=$("#zwTheme").value;db.ppt.zwProxy=$("#zwProxy").value.trim();persist();syncPptUi();});});
 /* 从生成结果提炼 PPT 大纲（章标题 + 小节要点，可再编辑） */
 function extractPptOutline(text,project){
  const lines=(text||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
@@ -877,14 +881,15 @@ async function zwAuthHeaders(){
  const sig=await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(md5(appId+ts)));
  return{"appId":appId,"timestamp":String(ts),"signature":btoa(String.fromCharCode(...new Uint8Array(sig))),"Content-Type":"application/json"};
 }
+/* 讯飞接口基址：优先走用户自建的转发服务（解决纯静态页面 CORS 拦截），未配置则直连官方接口 */
+function zwBase(){const p=(db.ppt.zwProxy||"").trim().replace(/\/+$/,"");return p||"https://zwapi.xfyun.cn";}
 async function genZhiwenPpt(query,outlineText,onStatus){
- const base=((db.ppt.zwProxy||"").trim().replace(/\/+$/,""))||"https://zwapi.xfyun.cn";
- const res=await fetch(base+"/api/aippt/createByOutline",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,outline:outlineText,theme:db.ppt.zwTheme||"auto",language:"cn"})});
+ const res=await fetch(zwBase()+"/api/aippt/createByOutline",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,outline:outlineText,theme:db.ppt.zwTheme||"auto",language:"cn"})});
  const j=await res.json();
  if(j.code!==0)throw new Error("讯飞智文返回错误 "+j.code+"："+(j.desc||"请检查凭证与点量"));
  const sid=j.data.sid;onStatus("任务已创建，智文正在生成大纲与 PPT…");
  for(let i=0;i<200;i++){await new Promise(r=>setTimeout(r,3500));
-  const pr=await fetch(base+"/api/aippt/progress?sid="+encodeURIComponent(sid),{headers:await zwAuthHeaders()});
+  const pr=await fetch(zwBase()+"/api/aippt/progress?sid="+encodeURIComponent(sid),{headers:await zwAuthHeaders()});
   const pj=await pr.json();const d=(pj&&pj.data)||{};
   if(pj.code!==0)throw new Error("进度查询失败："+pj.desc);
   if(d.errMsg)throw new Error("生成失败："+d.errMsg);
@@ -892,44 +897,49 @@ async function genZhiwenPpt(query,outlineText,onStatus){
   if(d.process>=100&&d.pptUrl)return d.pptUrl;}
  throw new Error("生成超时（>10 分钟），请稍后重试");
 }
-/* Cloudflare Worker 一键转发服务模板：解决浏览器 CORS 拦截 zwapi.xfyun.cn 的问题 */
-const ZW_WORKER=`export default {
-  async fetch(request) {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-        "Access-Control-Allow-Headers": "*"
-      }});
-    }
-    const url = new URL(request.url);
-    const target = new URL(url.pathname + url.search, "https://zwapi.xfyun.cn");
-    const headers = new Headers(request.headers);
-    headers.delete("origin"); headers.delete("referer"); headers.delete("host");
-    const res = await fetch(target, { method: request.method, headers, body: request.body });
-    const out = new Response(res.body, res);
-    out.headers.set("Access-Control-Allow-Origin", "*");
-    return out;
-  }
-};`;
+/* ---------- 终稿机制与 PPT 内容来源（初稿→修订→终稿→PPT） ---------- */
+function syncFinalUi(){const el=$("#finalStatus");if(el)el.textContent=db.final&&db.final.text?"✅ 终稿已确认："+new Date(db.final.time).toLocaleString():"";}
+$("#btnFinalSave").onclick=()=>{const t=$("#genResult").value.trim();if(!t){alert("生成结果栏还没有内容：请先生成初稿并完成修订");return;}db.final={text:t,time:Date.now()};persist();syncFinalUi();refreshPptOutline(true);toast("终稿已确认：导出终稿 Word 与 PPT 生成都将以此版本为准");};
+/* PPT 内容来源：优先终稿，未确认终稿时退回当前生成结果 */
+function pptSrcText(){return(db.final&&db.final.text)||$("#genResult").value||"";}
+function syncPptSrcStatus(){const el=$("#pptSrcStatus");if(!el)return;
+ el.textContent=db.final&&db.final.text?`内容来源：修订后确认的终稿（${new Date(db.final.time).toLocaleString()} 确认）`:`内容来源：当前生成结果（尚未确认终稿：建议修订完成后点「✅ 确认终稿」再生成 PPT）`;}
 let pptLastSrc="";
-function syncPptSrc(){const el=$("#pptSrc");if(!el)return;el.textContent=db.final&&db.final.text?`✅ 基于已确认终稿（${db.final.time}，约 ${db.final.text.replace(/\s+/g,"").length} 字）`:"尚未确认终稿，将使用当前生成结果（建议修订完成后先在上方点「✅ 确认终稿」）";}
-$("#btnPpt").onclick=()=>{const panel=$("#pptPanel");panel.hidden=!panel.hidden;
- if(!panel.hidden){const src=db.final&&db.final.text?db.final.text:$("#genResult").value.trim();
-  if(!src){toast("请先生成初稿（并在修订完成后确认终稿），再基于终稿生成 PPT");panel.hidden=true;return;}
-  syncPptSrc();
-  if(!$("#pptOutline").value.trim()||pptLastSrc!==src){$("#pptOutline").value=extractPptOutline(src,$("#fProject").value.trim()||"方案汇报");pptLastSrc=src;}
-  syncPptUi();}};
+function refreshPptOutline(force){const src=pptSrcText();syncPptSrcStatus();if(!src.trim())return;
+ if(force||src!==pptLastSrc||!$("#pptOutline").value.trim()){$("#pptOutline").value=extractPptOutline(src,$("#fProject").value.trim()||"方案汇报");pptLastSrc=src;}}
+$("#btnPptRe").onclick=()=>{if(!pptSrcText().trim()){toast("暂无可用内容：请先生成初稿或确认终稿");return;}refreshPptOutline(true);toast("已按最新内容重新提炼 PPT 大纲");};
+/* ---------- 讯飞智文跨域（CORS）说明与转发方案 ---------- */
+const ZW_WORKER=`export default{
+ async fetch(req){
+  if(req.method==="OPTIONS")return new Response(null,{headers:{"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"*","Access-Control-Allow-Methods":"GET,POST,OPTIONS"}});
+  const u=new URL(req.url);
+  const r=await fetch("https://zwapi.xfyun.cn"+u.pathname+u.search,{method:req.method,headers:req.headers,body:req.body});
+  const o=new Response(r.body,r);
+  o.headers.set("Access-Control-Allow-Origin","*");
+  return o;
+ }
+};`;
+function zwCorsModal(){
+ openModal(`<h3>ℹ 讯飞智文跨域（CORS）说明与转发方案</h3>
+ <p class="hint" style="margin-bottom:8px"><b>根因</b>：zwapi.xfyun.cn 是服务端接口，其响应未携带跨域许可（Access-Control-Allow-Origin），浏览器 CORS 安全策略禁止 GitHub Pages 这类纯静态页面在浏览器中直接调用它。这是浏览器安全机制，不是凭据或代码故障。</p>
+ <p class="hint" style="margin-bottom:8px"><b>解决方案</b>：① 改用本地引擎（推荐）：完全离线免费，生成结果可编辑可下载；② 部署免费转发服务：在 Cloudflare Workers（免费额度足够）使用下方模板代码，部署后把得到的地址填入 PPT 生成台的「转发服务地址」；③ 若您有自己的服务器/云函数，也可自行实现同样的转发逻辑。</p>
+ <p style="margin:8px 0 4px"><b>Cloudflare Worker 转发模板</b>（注册 Cloudflare → Workers 与路由 → 创建 Worker → 粘贴此代码并部署） <button class="btn btn-sm" id="mCopyWorker" type="button">⧉ 复制模板代码</button></p>
+ <div class="rte" style="max-height:220px"><pre style="font-size:12px;white-space:pre-wrap;margin:0">${esc(ZW_WORKER)}</pre></div>
+ <p class="hint" style="margin-top:8px">部署成功后会得到类似 https://your-name.workers.dev 的地址，复制填入 PPT 生成台「转发服务地址」并保存，讯飞智文调用即改经该地址中转，不再被跨域拦截。注意：转发请求会携带您的凭据，转发服务请只部署在自己可信的账号上。</p>
+ <div class="acts"><button class="btn btn-primary" id="mOk">知道了</button></div>`);
+ $("#mCopyWorker").onclick=()=>copyText(ZW_WORKER);
+ $("#mOk").onclick=closeModal;}
+$("#btnZwCors").onclick=zwCorsModal;
 $("#btnPptRun").onclick=async()=>{
  const outline=$("#pptOutline").value.trim();if(!outline){alert("PPT 大纲不能为空");return;}
  const btn=$("#btnPptRun");btn.disabled=true;const st=$("#pptStatus");$("#pptResult").hidden=true;st.textContent="";
  try{
   if(db.ppt.engine==="zhiwen"){
-   db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();persist();
+   db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();db.ppt.zwProxy=$("#zwProxy").value.trim();persist();
    const miss=[!db.ppt.zwAppId&&"APPID",!db.ppt.zwApiKey&&"APIKey",!db.ppt.zwApiSecret&&"APISecret"].filter(Boolean);
    if(miss.length){st.textContent="⚠ 讯飞智文凭据未填写完整，缺少："+miss.join("、")+"。请在上方「讯飞智文配置」中补齐后再点生成（或改用本地引擎）。";return;}
-   const article=($("#genResult").value||"").slice(0,6000);
-   const query=`请基于以下方案文档生成汇报 PPT，项目：${$("#fProject").value.trim()||"方案"}。方案内容摘要：${article.slice(0,3000)}`;
+   const src=pptSrcText();
+   const query=`请基于以下方案文档生成汇报 PPT，项目：${$("#fProject").value.trim()||"方案"}。${db.final&&db.final.text?"内容为修订后确认的终稿。":""}方案内容摘要：${src.slice(0,3000)}`;
    const url=await genZhiwenPpt(query,outline,m=>st.textContent=m);
    const a=$("#pptDownload");a.href=url;a.target="_blank";$("#pptResult").hidden=false;st.textContent="生成完成，点击右侧按钮下载";
   }else{
@@ -938,11 +948,14 @@ $("#btnPptRun").onclick=async()=>{
    st.textContent=`已生成 ${fn}，浏览器已开始下载；不满意可编辑大纲后再次生成`;
   }
  }catch(err){
-  st.textContent=err instanceof TypeError?((db.ppt.zwProxy||"").trim()?"⚠ 未能连通转发服务：请确认「转发服务地址」填写正确且已部署成功（形如 https://名字.workers.dev），或改用本地引擎。":"⚠ 浏览器跨域（CORS）拦截了对讯飞智文的直连（该接口为服务端设计，静态页面无法直连）。解决办法：展开下方「🛠 一键部署免费转发服务」按教程部署后把地址填入「转发服务地址」重试；或直接改用本地引擎即时生成。"):"⚠ "+err.message;}
+  if(err instanceof TypeError&&db.ppt.engine==="zhiwen"){
+   st.innerHTML=(db.ppt.zwProxy?"⚠ 已配置的转发服务地址无法访问（请求失败）：请确认转发服务已部署上线且地址填写正确；也可清空转发地址后查看解决方案。 ":"⚠ 浏览器跨域（CORS）拦截了对讯飞智文的直接调用：zwapi.xfyun.cn 为服务端接口，GitHub Pages 纯静态页面无法在浏览器中直连，这是浏览器安全机制，不是凭据错误。 ")+`<button class="btn btn-sm" id="btnCorsLocal" type="button">改用本地引擎直接生成</button> <button class="btn btn-sm" id="btnCorsHow" type="button">查看 CORS 转发方案</button>`;
+   $("#btnCorsLocal").onclick=async()=>{try{st.textContent="本地生成中…";const fn=await genLocalPpt($("#pptOutline").value.trim());st.textContent=`已改用本地引擎生成 ${fn}，浏览器已开始下载`;}catch(e2){st.textContent="⚠ "+e2.message;}};
+   $("#btnCorsHow").onclick=zwCorsModal;
+  }else st.textContent="⚠ "+err.message;
+ }
  finally{btn.disabled=false;}
 };
-if($("#zwWorkerCode"))$("#zwWorkerCode").value=ZW_WORKER;
-if($("#btnCopyWorker"))$("#btnCopyWorker").onclick=()=>copyText(ZW_WORKER);
 
 /* ---------- 现有文件模版上传（自动补充项目基本信息） ---------- */
 let tplFiles=[];
@@ -963,7 +976,7 @@ $("#tplFile").onchange=async e=>{const files=[...e.target.files];if(!files.lengt
  for(const f of files){try{const r=await parseFile(f);tplFiles.push({name:f.name,text:r.text.slice(0,20000)});}catch(err){alert("解析失败："+f.name+"："+err.message);}}
  e.target.value="";renderTplFiles();autofillFromTpl(tplFiles.map(x=>x.text).join("\n"));toast("已检索文件并自动补充项目基本信息，可自行调整");};
 
-/* ---------- 修订对话框待确认清单 / 终稿确认与导出终稿 Word ---------- */
+/* ---------- 修订对话框待确认清单 / 导出终稿 Word ---------- */
 function updateChecklist(){
  const el=$("#chatChecklist");if(!el)return;
  const lines=($("#genResult").value||"").split(/\r?\n/).filter(l=>/待补充|待核实/.test(l)).map(l=>l.trim()).slice(0,20);
@@ -971,21 +984,15 @@ function updateChecklist(){
  el.querySelectorAll("[data-ck]").forEach(c=>c.onclick=()=>{$("#chatInput").value="请处理以下内容："+lines[+c.dataset.ck]+"　（如是确定性数据请标注待学校提供，不要编造）";$("#chatInput").focus();});
  const rb=$("#btnCkRefresh");if(rb)rb.onclick=updateChecklist;
 }
-$("#btnFinal").onclick=()=>{const t=$("#genResult").value.trim();if(!t){alert("生成结果为空，请先生成初稿并完成修订");return;}
- db.final={text:t,time:new Date().toLocaleString()};persist();pptLastSrc="";syncPptSrc();toast("已确认终稿：后续 PPT 生成与「导出终稿 Word」都将基于此内容");};
 $("#btnChatWord").onclick=()=>{
+ /* 仅导出终稿 Word：不再提供对话记录导出 */
  const isFinal=!!(db.final&&db.final.text);
- const text=isFinal?db.final.text:$("#genResult").value.trim();
- if(!text){alert("暂无终稿或生成结果可导出");return;}
+ const text=isFinal?db.final.text:$("#genResult").value;
+ if(!text||!text.trim()){alert("暂无终稿内容：请先生成初稿、完成修订后点「✅ 确认终稿」");return;}
  const fmt=db.formats.find(f=>f.id===$("#fFormat").value)||null;
  const title=($("#fProject").value.trim()||"方案")+"_"+$("#fType").value+"_终稿";
- let bodyHtml=md2html(stripTocBlock(text.split(/\r?\n/)).join("\n"),fmt);
- const tocField=wordTocField(fmt);
- if(/^<h1/.test(bodyHtml)){const p=bodyHtml.indexOf("</h1>")+5;bodyHtml=bodyHtml.slice(0,p)+tocField+bodyHtml.slice(p);}
- else bodyHtml=tocField+bodyHtml;
- const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(title)}</title></head><body>${bodyHtml}</body></html>`;
- const blob=new Blob(["\ufeff",html],{type:"application/msword"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title+".doc";a.click();
- toast(isFinal?"终稿已导出 Word（含可更新目录）":"尚未点「✅ 确认终稿」，已按当前生成结果导出");};
+ exportWordDoc(text,title,fmt);
+ toast(isFinal?(fmt?`已导出终稿 Word（套用格式：${fmt.name}）`:"已导出终稿 Word"):"尚未确认终稿：已按当前生成结果导出，建议修订完成后先点「✅ 确认终稿」");};
 
 /* ---------- 方案文库：定时自动训练 ---------- */
 db.train=db.train||{on:false,time:"09:00",freq:"daily",lastRun:0,style:"",logs:[]};
@@ -1058,3 +1065,5 @@ renderAll();
 $("#btnTrainPanel").onclick=trainModal;
 renderTplFiles();
 updateChecklist();
+syncFinalUi();
+refreshPptOutline(false);
