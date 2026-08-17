@@ -812,7 +812,7 @@ async function genLocalPpt(outlineText){
 /* 讯飞智文引擎：HMAC-SHA1(md5(appId+ts)) 鉴权 → createByOutline → 轮询 progress 拿下载链接 */
 async function zwAuthHeaders(){
  const appId=db.ppt.zwAppId,secret=db.ppt.zwApiSecret;
- if(!appId||!secret)throw new Error("请先填写讯飞智文的 APPID 与 APISecret");
+ if(!appId||!db.ppt.zwApiKey||!secret)throw new Error("讯飞智文凭据未填写完整：请在上方「讯飞智文配置」中补齐 APPID、APIKey、APISecret 三项后再生成");
  if(!window.md5)throw new Error("签名组件未加载，请联网后刷新");
  const ts=Math.floor(Date.now()/1000);
  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-1"},false,["sign"]);
@@ -843,6 +843,9 @@ $("#btnPptRun").onclick=async()=>{
  const btn=$("#btnPptRun");btn.disabled=true;const st=$("#pptStatus");$("#pptResult").hidden=true;st.textContent="";
  try{
   if(db.ppt.engine==="zhiwen"){
+   db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();persist();
+   const miss=[!db.ppt.zwAppId&&"APPID",!db.ppt.zwApiKey&&"APIKey",!db.ppt.zwApiSecret&&"APISecret"].filter(Boolean);
+   if(miss.length){st.textContent="⚠ 讯飞智文凭据未填写完整，缺少："+miss.join("、")+"。请在上方「讯飞智文配置」中补齐后再点生成（或改用本地引擎）。";return;}
    const article=($("#genResult").value||"").slice(0,6000);
    const query=`请基于以下方案文档生成汇报 PPT，项目：${$("#fProject").value.trim()||"方案"}。方案内容摘要：${article.slice(0,3000)}`;
    const url=await genZhiwenPpt(query,outline,m=>st.textContent=m);

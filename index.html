@@ -242,8 +242,8 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
         <div class="card gcard"><h3>🖥 4. 勾选硬件配置（可选）</h3><div id="genHardware" data-kind="hardware"></div></div>
         <div class="card gcard"><h3>🚩 5. 勾选政策依据（按专业+产品智能匹配，可自由调整）<button class="btn btn-sm" id="btnPolMatch" type="button">🔄 重新匹配</button></h3><div id="genPolicies" data-kind="policies"></div></div>
         <div class="card gcard"><h3>🔢 6. 字数选择</h3>
-          <div class="field"><label>整体最低字数</label><input id="fWordsTotal" type="number" min="0" step="500" value="8000"></div>
           <div class="field"><label>整体最高字数（选填，0 或留空 = 不限）</label><input id="fWordsMax" type="number" min="0" step="500" value="0"></div>
+          <div class="field"><label>整体最低字数</label><input id="fWordsTotal" type="number" min="0" step="500" value="8000"></div>
           <div class="field" style="margin-bottom:0"><label>每章节最低字数</label><input id="fWordsChapter" type="number" min="0" step="100" value="500"></div>
         </div>
         <div class="card gcard"><h3>🎨 7. 套用格式（来自文章格式库）</h3>
@@ -276,9 +276,11 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
           <h3>📽 PPT 生成台 <span class="hint">基于上方生成结果自动提炼大纲，可调整引擎/主题/大纲</span></h3>
           <div class="field"><label>生成引擎</label><select id="pptEngine"><option value="local">本地引擎（无需联网与额度，即时生成 .pptx，推荐）</option><option value="zhiwen">讯飞智文 AIPPT（需配置下方三项凭证）</option></select></div>
           <div id="zwCfg">
-            <div class="field"><label>讯飞开放平台 APPID</label><input id="zwAppId" placeholder="在 xfyun.cn 控制台创建「智能PPT」应用后获取"></div>
-            <div class="field"><label>APIKey</label><input id="zwApiKey" placeholder="应用的 APIKey"></div>
-            <div class="field"><label>APISecret</label><input id="zwApiSecret" type="password" placeholder="应用的 APISecret（仅存本机浏览器）"></div>
+            <h4 style="margin:12px 0 6px">🔑 讯飞智文配置</h4>
+            <p class="hint" style="margin:0 0 8px">以下三项凭据用于调用讯飞智文 PPT 生成工具（鉴权签名与任务创建）。请登录 <a href="https://xinghuo.xfyun.cn/aippt" target="_blank" rel="noopener">讯飞开放平台</a> 创建「智能PPT」应用后获取；填写后自动保存，下次打开页面自动回填，凭据仅存于本机浏览器。</p>
+            <div class="field"><label>APPID *</label><input id="zwAppId" placeholder="应用的 APPID"></div>
+            <div class="field"><label>APIKey *</label><input id="zwApiKey" placeholder="应用的 APIKey"></div>
+            <div class="field"><label>APISecret *</label><input id="zwApiSecret" type="password" placeholder="应用的 APISecret"></div>
             <div class="field"><label>主题样式</label><select id="zwTheme"><option value="auto">随机主题</option><option value="purple">紫影幽蓝</option><option value="green">绿色主题</option><option value="lightblue">清逸天蓝</option><option value="taupe">质感之境</option><option value="blue">星光夜影</option><option value="telecomRed">炽热暖阳</option><option value="telecomGreen">幻翠奇旅</option></select></div>
           </div>
           <div class="field"><label>PPT 大纲（按“章标题 / 小节要点”自动提炼，可直接编辑调整后再生成）</label><textarea id="pptOutline" style="min-height:160px"></textarea></div>
