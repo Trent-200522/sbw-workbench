@@ -222,7 +222,7 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
   </section>
 
   <section class="view" id="view-gen">
-    <div class="gen-banner"><div><b>⚡ 方案生成台</b><div class="m">按 1→8 步在下方卡片中勾选配置，再在最底部生成区配置大模型、一键生成有依据的申报书初稿；生成后可在修订对话框中继续打磨，确认终稿后由底部 PPT 生成台基于终稿生成 PPT。</div></div></div>
+    <div class="gen-banner"><div><b>⚡ 方案生成台</b><div class="m">按 1→8 步在下方卡片中勾选配置，再在最底部生成区配置大模型、一键生成有依据的申报书初稿；生成后可在修订对话框中继续打磨，填入待补充信息后点「形成终稿」由大模型自动把修订内容填入初稿对应位置，再由底部 PPT 生成台基于终稿生成 PPT。</div></div></div>
     <div class="gen-top">
         <div class="card gcard"><h3>📂 1. 现有文件模版（可选）<span style="font-size:12px;color:#6b7280;font-weight:normal">上传后自动检索并补充项目基本信息，可再调整</span></h3>
           <button class="btn" id="btnTplUp" type="button">⬆ 上传文件（Word / PDF / Excel / txt）</button><input type="file" id="tplFile" accept=".docx,.doc,.pdf,.xlsx,.xls,.csv,.txt,.md" multiple hidden>
@@ -271,8 +271,8 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
           <button class="btn" id="btnSaveProp">💾 存入方案文库</button>
           <button class="btn" id="btnWord">📑 导出 Word</button>
         </div>
-        <h3 style="margin-top:18px">💬 修订对话框 <span style="font-size:12px;color:#6b7280;font-weight:normal">填入新一轮需求与关键信息完成对话后，点「确认终稿」定稿；终稿 Word 导出与 PPT 均以此为准</span>
-          <button class="btn btn-sm btn-primary" id="btnFinalSave" type="button">✅ 确认终稿</button>
+        <h3 style="margin-top:18px">💬 修订对话框 <span style="font-size:12px;color:#6b7280;font-weight:normal">填入待补充信息与新要求并逐条发送后，点「形成终稿」：大模型会自动把修订内容填入初稿对应位置形成终稿；终稿 Word 导出与 PPT 均以此为准</span>
+          <button class="btn btn-sm btn-primary" id="btnFinalSave" type="button">✅ 形成终稿</button>
           <button class="btn btn-sm" id="btnChatWord" type="button">📑 导出终稿 Word</button>
           <span id="finalStatus" class="hint" style="font-size:12px;color:#15803d"></span></h3>
         <div class="chatbox">
@@ -319,6 +319,6 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
   </section>
 </main>
 <div id="mask" hidden><div class="modal" id="modalBox"></div></div>
-<script src="app.js?v=20260817b"></script>
+<script src="app.js?v=20260817c"></script>
 </body>
 </html>
