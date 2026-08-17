@@ -898,11 +898,10 @@ function zwBase(){const p=(db.ppt.zwProxy||"").trim().replace(/\/+$/,"");return 
 /* 容错解析讯飞响应：正常返回 JSON；鉴权失败等异常时返回纯文本（如 Invalid AppId），需转成友好报错 */
 async function zwParse(res){const t=await res.text();
  try{return JSON.parse(t);}catch(e){throw new Error(`讯飞智文返回异常（HTTP ${res.status}）：${t.slice(0,120)||"空响应"}（常见于 APPID/APIKey/APISecret 填写有误或与所开通服务不匹配）`);}}
-async function genZhiwenPpt(query,outlineText,onStatus){
- const res=await fetch(zwBase()+"/api/aippt/createByOutline",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,outline:outlineText,theme:db.ppt.zwTheme||"auto",language:"cn"})});
- const j=await zwParse(res);
- if(j.code!==0)throw new Error("讯飞智文返回错误 "+j.code+"："+(j.desc||"请检查凭证与点量"));
- const sid=j.data.sid;onStatus("任务已创建，智文正在生成大纲与 PPT…");
+/* 讯飞的 outline 参数需传 JSON 结构（标题+章节/小节树），传纯文本大纲会导致服务端解析报错 99999 */
+function zwOutlineJson(text){const p=parsePptOutline(text||"");
+ return JSON.stringify({title:p.title,chapters:p.slides.slice(0,10).map(s=>({chapterTitle:s.t,chapterContents:(s.b||[]).map(x=>({chapterTitle:x}))}))});}
+async function zwPoll(sid,onStatus){onStatus("任务已创建，智文正在生成大纲与 PPT…");
  for(let i=0;i<200;i++){await new Promise(r=>setTimeout(r,3500));
   const pr=await fetch(zwBase()+"/api/aippt/progress?sid="+encodeURIComponent(sid),{headers:await zwAuthHeaders()});
   const pj=await zwParse(pr);const d=(pj&&pj.data)||{};
@@ -910,7 +909,22 @@ async function genZhiwenPpt(query,outlineText,onStatus){
   if(d.errMsg)throw new Error("生成失败："+d.errMsg);
   onStatus(`智文生成中… ${d.process??0}%（30=大纲完成，70=PPT完成，100=可下载）`);
   if(d.process>=100&&d.pptUrl)return d.pptUrl;}
- throw new Error("生成超时（>10 分钟），请稍后重试");
+ throw new Error("生成超时（>10 分钟），请稍后重试");}
+async function genZhiwenPpt(query,outlineText,onStatus){
+ /* 首选：按大纲生成（8 点量）；服务端报参数/系统错误时自动改用按需求直接生成（10 点量） */
+ try{
+  const res=await fetch(zwBase()+"/api/aippt/createByOutline",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,outline:zwOutlineJson(outlineText),theme:db.ppt.zwTheme||"auto",language:"cn"})});
+  const j=await zwParse(res);
+  if(j.code!==0)throw new Error("讯飞智文返回错误 "+j.code+"："+(j.desc||"请检查凭证与点量"));
+  return await zwPoll(j.data.sid,onStatus);
+ }catch(e){
+  if(e instanceof TypeError)throw e; /* 网络/跨域类错误不重试，由上层给出 CORS 指引 */
+  onStatus("按大纲生成不可用（"+e.message+"），自动改用按需求直接生成…");
+  const res=await fetch(zwBase()+"/api/aippt/create",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,theme:db.ppt.zwTheme||"auto",language:"cn"})});
+  const j=await zwParse(res);
+  if(j.code!==0)throw new Error("讯飞智文返回错误 "+j.code+"："+(j.desc||"请检查凭证与点量"));
+  return await zwPoll(j.data.sid,onStatus);
+ }
 }
 /* ---------- 终稿机制与 PPT 内容来源（初稿→修订→终稿→PPT） ---------- */
 function syncFinalUi(){const el=$("#finalStatus");if(el)el.textContent=db.final&&db.final.text?"✅ 终稿已形成："+new Date(db.final.time).toLocaleString():"";}
