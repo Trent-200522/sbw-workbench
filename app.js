@@ -87,7 +87,7 @@ try{db=JSON.parse(localStorage.getItem(LS));}catch(e){}
 if(!db||!Array.isArray(db.products)){db=seed();localStorage.setItem(LS,JSON.stringify(db));}
 function persist(){try{localStorage.setItem(LS,JSON.stringify(db));return true;}catch(e){alert("保存失败：浏览器本地存储空间已满（localStorage 超限），本次内容未写入。\n建议：①删除方案文库/政策资料库中导入了完整长文档的条目（占用空间最大）；②或先点顶部「导出 JSON」备份，再「清空全部数据」后重新导入精简内容。\n当前弹窗内容仍保留，可先复制正文到本地再处理。");return false;}}
 db.llm=db.llm||{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};
-db.ppt=db.ppt||{engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto"};
+db.ppt=db.ppt||{engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwProxy:"",zwTheme:"auto"};
 db.formats.forEach(f=>{if(f&&f.styles)for(const k in f.styles)normStyle(f.styles[k]);});
 if(!Array.isArray(db.hardware)||!db.hardware.length||(db.hardware[0]&&db.hardware[0].model===undefined))db.hardware=seed().hardware;
 if(!Array.isArray(db.formats)||!db.formats.length)db.formats=seed().formats;
@@ -365,7 +365,9 @@ const EXTRA_SKILLS=[
  {name:"Coze 方案生成 Bot",desc:"移植自 Coze 智能体：先提纲后分章生成的工作流",
   prompt:"你是“方案大师”Bot，按以下工作流执行：第一步先输出章节提纲（不写正文）等待用户确认；第二步用户确认后逐章生成，每章先引政策依据、再述建设内容、最后列该章预算；第三步全篇完成后输出预算汇总表。"},
  {name:"Dify 知识库问答约束",desc:"移植自 Dify 知识库节点：只依据已给材料回答",
-  prompt:"回答时优先引用用户提供的材料（附件、已勾选的政策、产品参数）；材料中找不到依据时，明确说明“知识库中未找到”，不得自行杜撰数据或政策文号。"}
+  prompt:"回答时优先引用用户提供的材料（附件、已勾选的政策、产品参数）；材料中找不到依据时，明确说明“知识库中未找到”，不得自行杜撰数据或政策文号。"},
+ {name:"禁用无序列表符号（排版铁律）",desc:"绝对禁止 -、*、• 等特殊字符，输出必须为自然段或有序编号",
+  prompt:"排版铁律（绝对禁止，最高优先级）：全文绝对禁止使用“-”“*”“•”“●”“▪”“·”等任何无序列表特殊符号/特殊字符，绝对禁止以项目符号（bullet）形式罗列内容；所有内容必须以规范的自然段落行文，或使用“一、/（一）/1./（1）/①”有序编号结构呈现。需要列举时，在段落内用“第一、第二、第三”或“一是、二是、三是”等序词连贯表述，或以有序编号分层组织；出现任何无序列表符号即视为不合格，必须改写。"}
 ];
 function skillForm(id){
  const k=id?db.skills.find(x=>x.id===id):{name:"",desc:"",prompt:""};
@@ -505,7 +507,7 @@ $("#fMajor").addEventListener("input",()=>{autoMatchProducts();autoMatchPolicies
 $("#btnPolMatch").onclick=()=>{polUser.clear();prodUser.clear();autoMatchProducts();autoMatchPolicies();syncAllGenSections();toast("已按专业重新智能匹配产品与政策");};
 /* 备份导入导出与清理 */
 function exportJson(){const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="申报方案工作台备份_"+todayStr()+".json";a.click();toast("已导出备份");}
-function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(Array.isArray(db.formats))db.formats.forEach(f=>{if(f&&f.styles)for(const k in f.styles)normStyle(f.styles[k]);});if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];if(!db.ppt)db.ppt={engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto"};if(!db.llm)db.llm={provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
+function importJson(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||!Array.isArray(d.products))throw 0;db=Object.assign({products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm},d);if(Array.isArray(db.formats))db.formats.forEach(f=>{if(f&&f.styles)for(const k in f.styles)normStyle(f.styles[k]);});if(!Array.isArray(db.hardware))db.hardware=[];if(!Array.isArray(db.formats))db.formats=[];if(!Array.isArray(db.skills))db.skills=[];if(!Array.isArray(db.fundOptions))db.fundOptions=[];if(!db.ppt)db.ppt={engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwProxy:"",zwTheme:"auto"};if(!db.llm)db.llm={provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};persist();renderAll();toast("导入成功");}catch(err){alert("备份文件格式不正确");}};r.readAsText(file);}
 $("#btnExport").onclick=exportJson;$("#btnExport2").onclick=exportJson;
 $("#btnImportTop").onclick=()=>$("#importFile").click();$("#btnImport2").onclick=()=>$("#importFile").click();
 $("#importFile").onchange=e=>{if(e.target.files[0])importJson(e.target.files[0]);e.target.value="";};
@@ -799,8 +801,8 @@ $("#btnWord").onclick=()=>{const text=$("#genResult").value;if(!text.trim()){ale
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title+".doc";a.click();toast(fmt?`已导出 Word（套用格式：${fmt.name}）`:"已导出 Word");};
 
 /* ---------- PPT 生成（本地引擎 + 讯飞智文） ---------- */
-function syncPptUi(){if(!$("#pptEngine"))return;$("#pptEngine").value=db.ppt.engine||"local";$("#zwAppId").value=db.ppt.zwAppId||"";$("#zwApiKey").value=db.ppt.zwApiKey||"";$("#zwApiSecret").value=db.ppt.zwApiSecret||"";$("#zwTheme").value=db.ppt.zwTheme||"auto";$("#zwCfg").style.display=db.ppt.engine==="zhiwen"?"":"none";}
-["#pptEngine","#zwAppId","#zwApiKey","#zwApiSecret","#zwTheme"].forEach(s=>{const el=$(s);if(el)el.addEventListener("change",()=>{db.ppt.engine=$("#pptEngine").value;db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();db.ppt.zwTheme=$("#zwTheme").value;persist();syncPptUi();});});
+function syncPptUi(){if(!$("#pptEngine"))return;$("#pptEngine").value=db.ppt.engine||"local";$("#zwAppId").value=db.ppt.zwAppId||"";$("#zwApiKey").value=db.ppt.zwApiKey||"";$("#zwApiSecret").value=db.ppt.zwApiSecret||"";$("#zwProxy").value=db.ppt.zwProxy||"";$("#zwTheme").value=db.ppt.zwTheme||"auto";$("#zwCfg").style.display=db.ppt.engine==="zhiwen"?"":"none";}
+["#pptEngine","#zwAppId","#zwApiKey","#zwApiSecret","#zwProxy","#zwTheme"].forEach(s=>{const el=$(s);if(el)el.addEventListener("change",()=>{db.ppt.engine=$("#pptEngine").value;db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();db.ppt.zwProxy=$("#zwProxy").value.trim();db.ppt.zwTheme=$("#zwTheme").value;persist();syncPptUi();});});
 /* 从生成结果提炼 PPT 大纲（章标题 + 小节要点，可再编辑） */
 function extractPptOutline(text,project){
  const lines=(text||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
@@ -876,12 +878,13 @@ async function zwAuthHeaders(){
  return{"appId":appId,"timestamp":String(ts),"signature":btoa(String.fromCharCode(...new Uint8Array(sig))),"Content-Type":"application/json"};
 }
 async function genZhiwenPpt(query,outlineText,onStatus){
- const res=await fetch("https://zwapi.xfyun.cn/api/aippt/createByOutline",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,outline:outlineText,theme:db.ppt.zwTheme||"auto",language:"cn"})});
+ const base=((db.ppt.zwProxy||"").trim().replace(/\/+$/,""))||"https://zwapi.xfyun.cn";
+ const res=await fetch(base+"/api/aippt/createByOutline",{method:"POST",headers:await zwAuthHeaders(),body:JSON.stringify({query,outline:outlineText,theme:db.ppt.zwTheme||"auto",language:"cn"})});
  const j=await res.json();
  if(j.code!==0)throw new Error("讯飞智文返回错误 "+j.code+"："+(j.desc||"请检查凭证与点量"));
  const sid=j.data.sid;onStatus("任务已创建，智文正在生成大纲与 PPT…");
  for(let i=0;i<200;i++){await new Promise(r=>setTimeout(r,3500));
-  const pr=await fetch("https://zwapi.xfyun.cn/api/aippt/progress?sid="+encodeURIComponent(sid),{headers:await zwAuthHeaders()});
+  const pr=await fetch(base+"/api/aippt/progress?sid="+encodeURIComponent(sid),{headers:await zwAuthHeaders()});
   const pj=await pr.json();const d=(pj&&pj.data)||{};
   if(pj.code!==0)throw new Error("进度查询失败："+pj.desc);
   if(d.errMsg)throw new Error("生成失败："+d.errMsg);
@@ -889,10 +892,33 @@ async function genZhiwenPpt(query,outlineText,onStatus){
   if(d.process>=100&&d.pptUrl)return d.pptUrl;}
  throw new Error("生成超时（>10 分钟），请稍后重试");
 }
+/* Cloudflare Worker 一键转发服务模板：解决浏览器 CORS 拦截 zwapi.xfyun.cn 的问题 */
+const ZW_WORKER=`export default {
+  async fetch(request) {
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Access-Control-Allow-Headers": "*"
+      }});
+    }
+    const url = new URL(request.url);
+    const target = new URL(url.pathname + url.search, "https://zwapi.xfyun.cn");
+    const headers = new Headers(request.headers);
+    headers.delete("origin"); headers.delete("referer"); headers.delete("host");
+    const res = await fetch(target, { method: request.method, headers, body: request.body });
+    const out = new Response(res.body, res);
+    out.headers.set("Access-Control-Allow-Origin", "*");
+    return out;
+  }
+};`;
+let pptLastSrc="";
+function syncPptSrc(){const el=$("#pptSrc");if(!el)return;el.textContent=db.final&&db.final.text?`✅ 基于已确认终稿（${db.final.time}，约 ${db.final.text.replace(/\s+/g,"").length} 字）`:"尚未确认终稿，将使用当前生成结果（建议修订完成后先在上方点「✅ 确认终稿」）";}
 $("#btnPpt").onclick=()=>{const panel=$("#pptPanel");panel.hidden=!panel.hidden;
- if(!panel.hidden){const text=$("#genResult").value.trim();
-  if(!text){toast("请先在上方生成方案初稿，再基于初稿生成 PPT");panel.hidden=true;return;}
-  if(!$("#pptOutline").value.trim())$("#pptOutline").value=extractPptOutline(text,$("#fProject").value.trim()||"方案汇报");
+ if(!panel.hidden){const src=db.final&&db.final.text?db.final.text:$("#genResult").value.trim();
+  if(!src){toast("请先生成初稿（并在修订完成后确认终稿），再基于终稿生成 PPT");panel.hidden=true;return;}
+  syncPptSrc();
+  if(!$("#pptOutline").value.trim()||pptLastSrc!==src){$("#pptOutline").value=extractPptOutline(src,$("#fProject").value.trim()||"方案汇报");pptLastSrc=src;}
   syncPptUi();}};
 $("#btnPptRun").onclick=async()=>{
  const outline=$("#pptOutline").value.trim();if(!outline){alert("PPT 大纲不能为空");return;}
@@ -912,9 +938,11 @@ $("#btnPptRun").onclick=async()=>{
    st.textContent=`已生成 ${fn}，浏览器已开始下载；不满意可编辑大纲后再次生成`;
   }
  }catch(err){
-  st.textContent=err instanceof TypeError?"⚠ 浏览器跨域（CORS）拦截了对讯飞智文的直接调用：该接口为服务端设计，纯静态页面无法直连。请改用本地引擎，或自建转发服务后再试。":"⚠ "+err.message;}
+  st.textContent=err instanceof TypeError?((db.ppt.zwProxy||"").trim()?"⚠ 未能连通转发服务：请确认「转发服务地址」填写正确且已部署成功（形如 https://名字.workers.dev），或改用本地引擎。":"⚠ 浏览器跨域（CORS）拦截了对讯飞智文的直连（该接口为服务端设计，静态页面无法直连）。解决办法：展开下方「🛠 一键部署免费转发服务」按教程部署后把地址填入「转发服务地址」重试；或直接改用本地引擎即时生成。"):"⚠ "+err.message;}
  finally{btn.disabled=false;}
 };
+if($("#zwWorkerCode"))$("#zwWorkerCode").value=ZW_WORKER;
+if($("#btnCopyWorker"))$("#btnCopyWorker").onclick=()=>copyText(ZW_WORKER);
 
 /* ---------- 现有文件模版上传（自动补充项目基本信息） ---------- */
 let tplFiles=[];
@@ -935,7 +963,7 @@ $("#tplFile").onchange=async e=>{const files=[...e.target.files];if(!files.lengt
  for(const f of files){try{const r=await parseFile(f);tplFiles.push({name:f.name,text:r.text.slice(0,20000)});}catch(err){alert("解析失败："+f.name+"："+err.message);}}
  e.target.value="";renderTplFiles();autofillFromTpl(tplFiles.map(x=>x.text).join("\n"));toast("已检索文件并自动补充项目基本信息，可自行调整");};
 
-/* ---------- 修订对话框待确认清单 / 导出对话 Word ---------- */
+/* ---------- 修订对话框待确认清单 / 终稿确认与导出终稿 Word ---------- */
 function updateChecklist(){
  const el=$("#chatChecklist");if(!el)return;
  const lines=($("#genResult").value||"").split(/\r?\n/).filter(l=>/待补充|待核实/.test(l)).map(l=>l.trim()).slice(0,20);
@@ -943,11 +971,21 @@ function updateChecklist(){
  el.querySelectorAll("[data-ck]").forEach(c=>c.onclick=()=>{$("#chatInput").value="请处理以下内容："+lines[+c.dataset.ck]+"　（如是确定性数据请标注待学校提供，不要编造）";$("#chatInput").focus();});
  const rb=$("#btnCkRefresh");if(rb)rb.onclick=updateChecklist;
 }
+$("#btnFinal").onclick=()=>{const t=$("#genResult").value.trim();if(!t){alert("生成结果为空，请先生成初稿并完成修订");return;}
+ db.final={text:t,time:new Date().toLocaleString()};persist();pptLastSrc="";syncPptSrc();toast("已确认终稿：后续 PPT 生成与「导出终稿 Word」都将基于此内容");};
 $("#btnChatWord").onclick=()=>{
- const bubs=$$("#chatLog .bub");if(!bubs.length){alert("暂无对话内容");return;}
- const html=bubs.map(b=>`<p style="margin:6px 0"><b>${b.classList.contains("u")?"我":"AI 助手"}：</b>${esc(b.textContent).replace(/\r?\n/g,"<br>")}</p>`).join("");
- const doc=`<html><head><meta charset="utf-8"><title>修订对话记录</title></head><body><h2>修订对话记录（${todayStr()}）</h2>${html}</body></html>`;
- const blob=new Blob(["\ufeff",doc],{type:"application/msword"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="修订对话记录_"+todayStr()+".doc";a.click();toast("对话已导出 Word");};
+ const isFinal=!!(db.final&&db.final.text);
+ const text=isFinal?db.final.text:$("#genResult").value.trim();
+ if(!text){alert("暂无终稿或生成结果可导出");return;}
+ const fmt=db.formats.find(f=>f.id===$("#fFormat").value)||null;
+ const title=($("#fProject").value.trim()||"方案")+"_"+$("#fType").value+"_终稿";
+ let bodyHtml=md2html(stripTocBlock(text.split(/\r?\n/)).join("\n"),fmt);
+ const tocField=wordTocField(fmt);
+ if(/^<h1/.test(bodyHtml)){const p=bodyHtml.indexOf("</h1>")+5;bodyHtml=bodyHtml.slice(0,p)+tocField+bodyHtml.slice(p);}
+ else bodyHtml=tocField+bodyHtml;
+ const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(title)}</title></head><body>${bodyHtml}</body></html>`;
+ const blob=new Blob(["\ufeff",html],{type:"application/msword"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=title+".doc";a.click();
+ toast(isFinal?"终稿已导出 Word（含可更新目录）":"尚未点「✅ 确认终稿」，已按当前生成结果导出");};
 
 /* ---------- 方案文库：定时自动训练 ---------- */
 db.train=db.train||{on:false,time:"09:00",freq:"daily",lastRun:0,style:"",logs:[]};
