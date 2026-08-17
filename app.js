@@ -13,18 +13,19 @@ function textOf(s){s=String(s??"");if(!/<[a-z][\s\S]*>/i.test(s))return s;const 
 const sum50=s=>{const t=textOf(s).replace(/\s+/g," ");return t.length>50?t.slice(0,50)+"…":t;};
 
 /* ---------- 格式常量 ---------- */
-const FMT_ELS=[["h1","一级标题（章）"],["h2","二级标题（节）"],["h3","三级标题（目）"],["h4","四级标题（子目）"],["h5","五级（①）"],["body","正文"],["tbTitle","表格标题"],["table","表格"],["fig","图形"]];
+const FMT_ELS=[["title","文档标题（大标题）"],["h1","一级标题（章）"],["h2","二级标题（节）"],["h3","三级标题（目）"],["h4","四级标题（子目）"],["h5","五级（①）"],["body","正文"],["tbTitle","表格标题"],["table","表格"],["fig","图形"]];
 const FONTS=["仿宋","仿宋_GB2312","黑体","楷体","楷体_GB2312","宋体","方正小标宋简体","华文中宋","等线","幼圆","微软雅黑","Times New Roman","Arial","Calibri","Cambria","Georgia","Consolas"];
 const SIZES=["初号","小初","一号","小一","二号","小二","三号","小三","四号","小四","五号","小五","六号","小六","七号","八号"];
 const SIZE_PT={"初号":42,"小初":36,"一号":26,"小一":24,"二号":22,"小二":18,"三号":16,"小三":15,"四号":14,"小四":12,"五号":10.5,"小五":9,"六号":7.5,"小六":6.5,"七号":5.5,"八号":5};
 const ALIGNS=[["left","左对齐"],["center","居中"],["right","右对齐"],["justify","两端对齐"]];
 const LINE_UNITS=[["times","倍（多倍行距）"],["pt","磅（固定值）"]];
-const STRUCT_DEF=`一、××××××　　　　　（一级标题，章）
+const STRUCT_DEF=`文档标题（大标题）　　（独立设置，不参与下方各级标题格式）
+一、××××××　　　　　（一级标题，章）
 （一）××××××　　　（二级标题，节）
 1. ××××××　　　　　（三级标题，目）
 （1）××××××　　　（四级标题，子目）
 ① ××××××　　　　 （五级，少见，多用于注释型列举）`;
-function defStyles(){return{h1:{font:"黑体",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h2:{font:"楷体",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h3:{font:"仿宋",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h4:{font:"仿宋",latin:"",size:"三号",bold:0,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h5:{font:"仿宋",latin:"",size:"三号",bold:0,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},body:{font:"仿宋",latin:"Times New Roman",size:"三号",bold:0,align:"justify",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},tbTitle:{font:"黑体",latin:"",size:"小四",bold:1,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:3,spaceAfter:3},table:{font:"宋体",latin:"Times New Roman",size:"小四",bold:0,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:0,spaceAfter:0},fig:{font:"楷体",latin:"",size:"小四",bold:0,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:3,spaceAfter:3}};}
+function defStyles(){return{title:{font:"方正小标宋简体",latin:"",size:"二号",bold:1,align:"center",indent:0,lineUnit:"times",lineVal:1.3,spaceBefore:0,spaceAfter:12},h1:{font:"黑体",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h2:{font:"楷体",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h3:{font:"仿宋",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h4:{font:"仿宋",latin:"",size:"三号",bold:0,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h5:{font:"仿宋",latin:"",size:"三号",bold:0,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},body:{font:"仿宋",latin:"Times New Roman",size:"三号",bold:0,align:"justify",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},tbTitle:{font:"黑体",latin:"",size:"小四",bold:1,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:3,spaceAfter:3},table:{font:"宋体",latin:"Times New Roman",size:"小四",bold:0,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:0,spaceAfter:0},fig:{font:"楷体",latin:"",size:"小四",bold:0,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:3,spaceAfter:3}};}
 
 /* 旧格式兼容归一：老数据的 line（单倍/1.5倍/2倍/固定28磅）→ lineUnit+lineVal；space → spaceBefore/spaceAfter */
 const LINE_OLD={"单倍":["times",1],"1.5倍":["times",1.5],"2倍":["times",2],"固定28磅":["pt",28]};
@@ -557,7 +558,7 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
  "“建设内容”部分必须逐款融入用户勾选的产品（名称、核心参数、卖点），参数不得夸大或虚构；",
  "“预算”部分仅写资金构成、使用管理与价格依据说明，不要自行绘制预算明细表，系统会根据勾选产品与硬件自动插入标准《项目预算明细表》（含明细与合计，合计=分项之和）；",
  "除预算明细表外，凡应当以表格呈现的内容（硬件配置、实施进度安排、阶段计划、人员分工等）必须直接输出真实的 Markdown 表格：每行以“|”开头并含表头行与分隔行（如 |---|---|），单元格内容写实，严禁写“表格略”“如下表所示”却不给出表格，也不得以文字罗列替代表格；",
- "对可推断的一般性内容（政策背景、行业趋势、常规建设思路等）可直接补全展开，尽量不留占位；但学校成立时间、专业开设年份、在校生/专业学生人数、教师人数、现有设备清单等确定性数据一律禁止编造，保留“（待核实：请学校提供×××）”字样，供用户后续确认；"];
+ "对可推断的一般性内容（政策背景、行业趋势、常规建设思路等）可直接补全展开，尽量不留占位；但学校成立时间、专业开设年份、在校生/专业学生人数、教师人数、现有设备清单等确定性数据一律禁止编造，统一保留“（待核实：请学校提供×××）”或“（待补充：×××）”字样，供用户后续确认；待补充标注只允许使用这两种格式，严禁使用“注：”“说明：”“TODO”等其他注释形式，也不得在正文中输出写作过程性批注；"];
  const tplHasAppx=!!tplText&&(/^附件\s*$/m.test(tplText)||/^附件[一二三四五六七八九十\d]/m.test(tplText)||/^[一二三四五六七八九十]+、[^\n]*附件/m.test(tplText));
  if(tplText){rules.push(`用户上传了现有文件模版，内容摘录如下，请从中提取项目背景、学校情况、建设需求等可用信息并融入正文：\n"""\n${tplText.slice(0,5000)}\n"""`);
   rules.push("正文章节结构必须严格跟随上传模版的章节标题与顺序（含各级标题编号样式），不得自行改用默认建议章节；");
@@ -780,27 +781,40 @@ function cssFor(st){if(!st)return "";normStyle(st);const fam=st.latin?`'${st.lat
  const lh=st.lineUnit==="pt"?`${st.lineVal}pt;mso-line-height-rule:exactly`:`${Math.round((st.lineVal||1)*100)}%`;
  const indent=st.indent?`text-indent:${st.indent*pt}pt;`:"";
  return `font-family:${fam};font-size:${pt}pt;${st.bold?"font-weight:bold;":""}text-align:${st.align};${indent}line-height:${lh};margin:${st.spaceBefore||0}pt 0 ${st.spaceAfter||0}pt 0;`;}
+/* 待补充/注释内容识别：（待核实/待补充/待确认/待填写/待提供…）与【…】标注，预览与导出 Word 时标红提醒 */
+const TODO_RE=/（待(?:核实|补充|确认|填写|提供)[^）]{0,80}）|【[^】]{0,80}】/g;
+function redMark(line){return line.replace(TODO_RE,m=>`<span style="color:#c00000;font-weight:bold">${m}</span>`);}
+/* 格式未配置文档标题时的默认样式（二号小标宋居中），文档标题不参与一二三级标题格式 */
+const TITLE_CSS_DEFAULT="font-family:'方正小标宋简体',serif;font-size:22pt;font-weight:bold;text-align:center;line-height:130%;margin:0 0 12pt 0;";
 function md2html(text,fmt){
  const S=k=>fmt?cssFor(fmt.styles[k]):"";
  const lines=esc(text).split(/\r?\n/);let out=[],tbl=[];
  const flush=()=>{if(!tbl.length)return;const rows=tbl.filter(r=>!r.split("|").every(c=>/^[\s:-]*$/.test(c)));
-  out.push(`<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;width:100%;${S("table")}">${rows.map(r=>"<tr>"+r.split("|").filter((c,i,a)=>!(i===0&&c==="")&&!(i===a.length-1&&c==="")).map(c=>`<td style="${S("table")}">${c.trim()}</td>`).join("")+"</tr>").join("")}</table>`);tbl=[];};
+  out.push(`<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;width:100%;${S("table")}">${rows.map(r=>"<tr>"+r.split("|").filter((c,i,a)=>!(i===0&&c==="")&&!(i===a.length-1&&c==="")).map(c=>`<td style="${S("table")}">${redMark(c.trim())}</td>`).join("")+"</tr>").join("")}</table>`);tbl=[];};
  lines.forEach((l,idx)=>{
   if(l.trim().startsWith("|")){tbl.push(l.trim());return;}
   flush();
   if(!l.trim()){return;}
-  if(idx===0&&!/^[一二三四五六七八九十]+、/.test(l)){out.push(`<h1 style="${S("h1")}text-align:center">${l}</h1>`);return;}
-  if(/^([一二三四五六七八九十]+、)/.test(l))return out.push(`<h2 style="${S("h1")}">${l}</h2>`);
-  if(/^附件/.test(l))return out.push(`<h2 style="${S("h1")}">${l}</h2>`);
-  if(/^（[一二三四五六七八九十]+）/.test(l))return out.push(`<h3 style="${S("h2")}">${l}</h3>`);
-  if(/^（\d+）/.test(l)||/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(l))return out.push(`<h4 style="${S("h4")}">${l}</h4>`);
-  if(/^\d+[\.、]/.test(l))return out.push(`<h4 style="${S("h3")}">${l}</h4>`);
-  if(/^(表|Table)\s?\d/.test(l))return out.push(`<p style="${S("tbTitle")}">${l}</p>`);
-  if(/^(图|Fig)\.?\s?\d/.test(l))return out.push(`<p style="${S("fig")}">${l}</p>`);
-  out.push(`<p style="${S("body")}">${l}</p>`);
+  if(idx===0&&!/^[一二三四五六七八九十]+、/.test(l)){out.push(`<h1 style="${S("title")||TITLE_CSS_DEFAULT}">${redMark(l)}</h1>`);return;}
+  if(/^([一二三四五六七八九十]+、)/.test(l))return out.push(`<h2 style="${S("h1")}">${redMark(l)}</h2>`);
+  if(/^附件/.test(l))return out.push(`<h2 style="${S("h1")}">${redMark(l)}</h2>`);
+  if(/^（[一二三四五六七八九十]+）/.test(l))return out.push(`<h3 style="${S("h2")}">${redMark(l)}</h3>`);
+  if(/^（\d+）/.test(l)||/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(l))return out.push(`<h4 style="${S("h4")}">${redMark(l)}</h4>`);
+  if(/^\d+[\.、]/.test(l))return out.push(`<h4 style="${S("h3")}">${redMark(l)}</h4>`);
+  if(/^(表|Table)\s?\d/.test(l))return out.push(`<p style="${S("tbTitle")}">${redMark(l)}</p>`);
+  if(/^(图|Fig)\.?\s?\d/.test(l))return out.push(`<p style="${S("fig")}">${redMark(l)}</p>`);
+  out.push(`<p style="${S("body")}">${redMark(l)}</p>`);
  });
  flush();return out.join("");
 }
+$("#btnRedPreview").onclick=()=>{const t=$("#genResult").value;if(!t.trim()){alert("暂无内容");return;}
+ const fmt=db.formats.find(f=>f.id===$("#fFormat").value)||null;
+ const cnt=(t.match(TODO_RE)||[]).length;
+ openModal(`<h3>🔍 待补充内容标红预览</h3>
+ <p class="hint">共发现 <b style="color:#c00000">${cnt}</b> 处待补充/注释内容（红色标出）：请在生成结果栏逐处补充完善；导出 Word 时这些内容同样以红色呈现，方便核对。</p>
+ <div class="rte" style="max-height:60vh">${md2html(t,fmt)}</div>
+ <div class="acts"><button class="btn btn-primary" id="mOk">知道了</button></div>`);
+ $("#mOk").onclick=closeModal;};
 $("#btnCopyAll").onclick=()=>{const t=$("#genResult").value;if(!t.trim()){alert("暂无内容");return;}copyText(t);};
 $("#btnSaveProp").onclick=()=>{const t=$("#genResult").value.trim();if(!t){alert("请先生成内容");return;}
  const project=$("#fProject").value.trim()||"未命名项目";const type=$("#fType").value;const school=$("#fSchool").value.trim()||"待定";
@@ -827,14 +841,22 @@ function syncPptUi(){if(!$("#pptEngine"))return;$("#pptEngine").value=db.ppt.eng
 /* 从生成结果提炼 PPT 大纲（章标题 + 小节要点，可再编辑） */
 function extractPptOutline(text,project){
  const lines=(text||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+ /* 去掉待补充标注与末尾标点，限制单条要点长度，保证大纲可直接用于 PPT */
+ const clip=s=>{s=s.replace(/（待[^）]*）|【[^】]*】/g,"").replace(/[；;。，]$/,"").trim();return s.length>32?s.slice(0,32)+"…":s;};
  const chapters=[];let cur=null;
  for(const l of lines){
-  if(/^[一二三四五六七八九十]+、/.test(l)){cur={t:l.replace(/^[一二三四五六七八九十]+、/,""),b:[]};chapters.push(cur);continue;}
+  if(isAppxHead(l))break;
+  if(H1_RE.test(l)){if(chapters.length>=10)break;cur={t:clip(l.replace(H1_RE,""))||"章节",b:[],body:[]};chapters.push(cur);continue;}
   if(!cur)continue;
-  if(/^（[一二三四五六七八九十]+）/.test(l)){cur.b.push(l.replace(/^（[一二三四五六七八九十]+）/,""));continue;}
-  if(cur.b.length<5&&l.length>15&&!/^\|/.test(l)&&!/^[①-⑩]/.test(l))cur.b.push(l.length>60?l.slice(0,60)+"…":l);}
+  if(/^\|/.test(l)||/^(表|图)\s?\d/.test(l))continue;
+  if(H2_RE.test(l)){const t=clip(l.replace(H2_RE,""));if(t&&cur.b.length<4)cur.b.push(t);continue;}
+  if(/^(\d+[\.、]|（\d+）|[①-⑩])/.test(l)){const t=clip(l.replace(/^(\d+[\.、]|（\d+）|[①-⑩])/,""));if(t&&cur.b.length<4)cur.b.push(t);continue;}
+  if(l.length>=12)cur.body.push(l);}
  const out=["标题："+(project||"方案汇报")];
- if(chapters.length)chapters.slice(0,10).forEach(c=>{out.push(c.t);c.b.slice(0,4).forEach(b=>out.push("- "+b));});
+ if(chapters.length)chapters.forEach(c=>{const b=c.b.slice(0,4);
+  if(!b.length&&c.body.length)b.push(clip(c.body[0]));
+  if(!b.length)b.push(c.t+"要点概述");
+  out.push(c.t);b.forEach(x=>out.push("- "+x));});
  else{out.push("方案概览");out.push("- "+(lines.slice(0,3).join("；").slice(0,120)||"请先生成方案初稿"));}
  return out.join("\n");
 }
@@ -951,7 +973,7 @@ ${$("#genResult").value.slice(0,20000)}
 ${userTurns.slice(0,8000)}
 """
 任务要求：
-1. 将用户补充的信息准确填写进初稿中对应的章节位置，替换“（待核实…）”“（待补充…）”等占位内容；
+1. 将用户补充的信息准确填写进初稿中对应的章节位置，替换“（待核实…）”“（待补充…）”等占位内容；确实无法从用户发言中补全的，保留原“（待…）”标注不要删除；
 2. 逐条满足用户提出的其他修订要求；
 3. 保持初稿的章节结构、标题编号样式、预算明细表、附件内容与各类表格不变，不得删减章节与数据；
 4. 不输出目录区域，不输出任何解释性语言，直接输出终稿全文；全文不得输出空行。`;
