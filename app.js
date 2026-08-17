@@ -552,9 +552,9 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
  const tplHasAppx=!!tplText&&(/^附件\s*$/m.test(tplText)||/^附件[一二三四五六七八九十\d]/m.test(tplText)||/^[一二三四五六七八九十]+、[^\n]*附件/m.test(tplText));
  if(tplText){rules.push(`用户上传了现有文件模版，内容摘录如下，请从中提取项目背景、学校情况、建设需求等可用信息并融入正文：\n"""\n${tplText.slice(0,5000)}\n"""`);
   rules.push("正文章节结构必须严格跟随上传模版的章节标题与顺序（含各级标题编号样式），不得自行改用默认建议章节；");
-  rules.push(tplHasAppx?"模版包含“附件”章节：正文中保留该章节标题，但不要填写具体附件内容，系统会自动在该章节下填入所选产品核心参数表格；":"模版不含“附件”章节：正文中不要自行撰写“附件”章节，系统会在文末自动追加并附上所选产品核心参数表格；");}
+  rules.push(tplHasAppx?"模版包含“附件”章节：正文中保留该章节标题（须位于全文最后一个章节位置，其后不得再写其他正文内容），但不要填写具体附件内容，系统会自动在该章节下填入所选产品核心参数表格；":"模版不含“附件”章节：正文中不要自行撰写“附件”章节，系统会在文末自动追加并附上所选产品核心参数表格；");}
  else rules.push("正文中不要自行撰写“附件”章节，系统会在文末自动附上所选产品核心参数表格；");
- rules.push("不要自行输出“目录”区域：系统会自动提取正文一级（一、）与二级（（一））标题并在文首生成目录；附件/附表相关内容一律不得出现在正文中：附件章节与产品核心参数表格由系统在全文末尾自动追加，正文写到最后一个正文章节即结束；");
+ rules.push("附件内容一律由系统在全文末尾自动追加：正文开头与中间不得出现任何附件标题或附件内容，尤其禁止在文首输出以“附件”“附件一：”等开头的行（如需提及，只在句内写“详见附件”即可）；不要自行输出“目录”区域：系统会自动提取正文一级（一、）与二级（（一））标题并在文首生成目录，附件/附表相关内容一律不得出现在正文目录与正文中，正文写到最后一个正文章节即结束；");
  if(db.train&&db.train.style&&db.train.on)rules.push(`以下写作规范由历史方案自动训练总结而来，请严格遵守：${db.train.style.slice(0,1500)}`);
  if(words.total||words.chapter||words.max)rules.push(`字数要求（硬性验收标准，必须严格执行）：全文不少于 ${words.total} 字${words.max?`，且全文不超过 ${words.max} 字（请在该上限内合理分配各章节篇幅）`:""}，且“一、/二、…”每个章节不少于 ${words.chapter} 字。请先按字数要求规划各章节篇幅再动笔，论证充分展开，用具体的建设内容、实施细节、数据与效益分析充实篇幅，严禁用空话套话或重复内容凑字数；`);
  if(hw.length)rules.push("用户勾选了硬件配置：须在“建设内容”章节单列硬件小节，并用 Markdown 表格列示（列：设备名称｜型号规格｜单位｜单价（万元）｜数量｜金额（万元）），并纳入预算明细；");
@@ -635,16 +635,19 @@ function insertBudgetTable(text,prods,hw,budget){
  let idx=lines.findIndex(l=>/^[一二三四五六七八九十]+、/.test(l)&&/资金预算|预算与用途|经费预算|预算明细/.test(l));
  if(idx<0)idx=lines.findIndex(l=>/^[一二三四五六七八九十]+、/.test(l)&&/预算/.test(l));
  if(idx>=0){lines.splice(idx+1,0,...tbl.split("\n").filter(Boolean));return lines.join("\n");}
- const ai=lines.findIndex(l=>l.trim()==="附件");
+ let ai=-1;for(let i=lines.length-1;i>=0;i--){if(lines[i].trim()==="附件"){ai=i;break;}}
  if(ai>=0){lines.splice(ai,0,...tbl.split("\n").filter(Boolean));return lines.join("\n");}
  return text+tbl;
 }
-/* 附件处理：正文已有附件章节（跟随模版）则把参数表格插入该章节下，否则追加文末 */
+/* 附件处理：附件内容始终置于全文末尾。仅当文档后半部分存在附件章节标题（跟随模版）时插入该标题下；
+   出现在开头/中间的“附件”提及行（如“附件：详见文末”）一律不作锚点，避免参数表被误插到文首 */
 function attachAppendix(text,prods){
  const ap=appendixText(prods);if(!ap)return text;
  const lines=text.split(/\r?\n/);
- const hi=lines.findIndex(l=>{const t=l.trim();return t==="附件"||/^附件[一二三四五六七八九十\d]/.test(t)||/^[一二三四五六七八九十]+、[^\n]*附件/.test(t);});
- if(hi<0)return text+ap;
+ const isAppx=l=>{const t=l.trim();return t==="附件"||/^附件[一二三四五六七八九十\d]/.test(t)||/^[一二三四五六七八九十]+、[^\n]*附件/.test(t);};
+ const half=Math.floor(lines.length/2);
+ let hi=-1;for(let i=lines.length-1;i>=half;i--){if(isAppx(lines[i])){hi=i;break;}}
+ if(hi<0)return text.replace(/[ \t\r\n]+$/,"")+"\n"+ap;
  const body=ap.split("\n").filter(l=>l.trim()&&l.trim()!=="附件");
  lines.splice(hi+1,0,...body);
  return lines.join("\n");
