@@ -572,7 +572,7 @@ function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,
  if(budget)rules.push(`用户设定项目整体预算为 ${budget} 万元，即产品/硬件等综合费用上限：预算章节表述的投资额不得超过该上限；若勾选产品与硬件的参考报价合计超过上限，须表述为“分期建设、按需配置，本期投入控制在 ${budget} 万元以内”，不得编造对不上的分项数字；`);
  if(fmt)rules.push(`文档格式须符合「${fmt.name}」：${fmtSpecText(fmt).replace(/\n/g," ")}`);
  skills.forEach(k=>{if(k&&k.prompt)rules.push(`技能要求（${k.name}）：${k.prompt}`);});
- rules.push("直接输出正文，不要输出任何解释性语言；全文不得输出空行：标题与段落之间直接换行紧密衔接，保证行文连贯。");
+ rules.push("直接输出正文，不要输出任何解释性语言；第一行单独输出文档标题（大标题），其下从“一、×××”一级标题开始正文；标题编号一律使用全角符号“一、/（一）/1./（1）/①”，严禁使用半角括号 (一)、(1) 或 Markdown 的 # 号标题；全文不得输出空行：标题与段落之间直接换行紧密衔接，保证行文连贯。");
  const sys=`你是高校商科实训实验室建设领域的资深方案撰写专家，服务于软件供应商浙江精创教育科技有限公司，长期为高校撰写${type}。写作要求：\n`+rules.map((r,i)=>`${i+1}. ${r}`).join("\n");
  let user=`请为以下项目撰写一份完整的${type}初稿：
 【项目名称】${project}
@@ -786,8 +786,15 @@ const TODO_RE=/（待(?:核实|补充|确认|填写|提供)[^）]{0,80}）|【[^
 function redMark(line){return line.replace(TODO_RE,m=>`<span style="color:#c00000;font-weight:bold">${m}</span>`);}
 /* 格式未配置文档标题时的默认样式（二号小标宋居中），文档标题不参与一二三级标题格式 */
 const TITLE_CSS_DEFAULT="font-family:'方正小标宋简体',serif;font-size:22pt;font-weight:bold;text-align:center;line-height:130%;margin:0 0 12pt 0;";
+/* 标题样式级联：某级标题未在格式中配置时，回退到最近的已配置上级标题样式，避免落回 Word 默认蓝色标题样式 */
+const STYLE_CHAIN={h5:["h5","h4","h3"],h4:["h4","h3"],h3:["h3"]};
+function styleFor(fmt,k){if(!fmt)return "";
+ const chain=STYLE_CHAIN[k]||[k];
+ for(const c of chain){if(fmt.styles[c])return cssFor(fmt.styles[c]);}
+ return "";}
 function md2html(text,fmt){
  const S=k=>fmt?cssFor(fmt.styles[k]):"";
+ const SH=k=>styleFor(fmt,k);
  const lines=esc(text).split(/\r?\n/);let out=[],tbl=[];
  const flush=()=>{if(!tbl.length)return;const rows=tbl.filter(r=>!r.split("|").every(c=>/^[\s:-]*$/.test(c)));
   out.push(`<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;width:100%;${S("table")}">${rows.map(r=>"<tr>"+r.split("|").filter((c,i,a)=>!(i===0&&c==="")&&!(i===a.length-1&&c==="")).map(c=>`<td style="${S("table")}">${redMark(c.trim())}</td>`).join("")+"</tr>").join("")}</table>`);tbl=[];};
@@ -795,12 +802,14 @@ function md2html(text,fmt){
   if(l.trim().startsWith("|")){tbl.push(l.trim());return;}
   flush();
   if(!l.trim()){return;}
+  l=l.replace(/\*\*/g,""); /* 去掉模型可能输出的加粗标记，避免干扰标题识别 */
   if(idx===0&&!/^[一二三四五六七八九十]+、/.test(l)){out.push(`<h1 style="${S("title")||TITLE_CSS_DEFAULT}">${redMark(l)}</h1>`);return;}
-  if(/^([一二三四五六七八九十]+、)/.test(l))return out.push(`<h2 style="${S("h1")}">${redMark(l)}</h2>`);
-  if(/^附件/.test(l))return out.push(`<h2 style="${S("h1")}">${redMark(l)}</h2>`);
-  if(/^（[一二三四五六七八九十]+）/.test(l))return out.push(`<h3 style="${S("h2")}">${redMark(l)}</h3>`);
-  if(/^（\d+）/.test(l)||/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(l))return out.push(`<h4 style="${S("h4")}">${redMark(l)}</h4>`);
-  if(/^\d+[\.、]/.test(l))return out.push(`<h4 style="${S("h3")}">${redMark(l)}</h4>`);
+  if(/^([一二三四五六七八九十]+、)/.test(l))return out.push(`<h2 style="${SH("h1")}">${redMark(l)}</h2>`);
+  if(/^附件/.test(l))return out.push(`<h2 style="${SH("h1")}">${redMark(l)}</h2>`);
+  if(/^[（(][一二三四五六七八九十]+[)）]/.test(l))return out.push(`<h3 style="${SH("h2")}">${redMark(l)}</h3>`);
+  if(/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(l))return out.push(`<h5 style="${SH("h5")}">${redMark(l)}</h5>`);
+  if(/^[（(]\d+[)）]/.test(l))return out.push(`<h4 style="${SH("h4")}">${redMark(l)}</h4>`);
+  if(/^\d+[\.、]/.test(l))return out.push(`<h4 style="${SH("h3")}">${redMark(l)}</h4>`);
   if(/^(表|Table)\s?\d/.test(l))return out.push(`<p style="${S("tbTitle")}">${redMark(l)}</p>`);
   if(/^(图|Fig)\.?\s?\d/.test(l))return out.push(`<p style="${S("fig")}">${redMark(l)}</p>`);
   out.push(`<p style="${S("body")}">${redMark(l)}</p>`);
@@ -838,25 +847,36 @@ function exportWordDoc(text,fileName,fmt){
 /* ---------- PPT 生成（本地引擎 + 讯飞智文） ---------- */
 function syncPptUi(){if(!$("#pptEngine"))return;$("#pptEngine").value=db.ppt.engine||"local";$("#zwAppId").value=db.ppt.zwAppId||"";$("#zwApiKey").value=db.ppt.zwApiKey||"";$("#zwApiSecret").value=db.ppt.zwApiSecret||"";$("#zwTheme").value=db.ppt.zwTheme||"auto";$("#zwProxy").value=db.ppt.zwProxy||"";$("#zwCfg").style.display=db.ppt.engine==="zhiwen"?"":"none";}
 ["#pptEngine","#zwAppId","#zwApiKey","#zwApiSecret","#zwTheme","#zwProxy"].forEach(s=>{const el=$(s);if(el)el.addEventListener("change",()=>{db.ppt.engine=$("#pptEngine").value;db.ppt.zwAppId=$("#zwAppId").value.trim();db.ppt.zwApiKey=$("#zwApiKey").value.trim();db.ppt.zwApiSecret=$("#zwApiSecret").value.trim();db.ppt.zwTheme=$("#zwTheme").value;db.ppt.zwProxy=$("#zwProxy").value.trim();persist();syncPptUi();});});
-/* 从生成结果提炼 PPT 大纲（章标题 + 小节要点，可再编辑） */
+/* 从终稿提炼 PPT 大纲：汇报提纲总览页 + 每章“小节标题 + 正文关键句”要点，去占位标注，可直接用于生成 PPT */
 function extractPptOutline(text,project){
  const lines=(text||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
- /* 去掉待补充标注与末尾标点，限制单条要点长度，保证大纲可直接用于 PPT */
- const clip=s=>{s=s.replace(/（待[^）]*）|【[^】]*】/g,"").replace(/[；;。，]$/,"").trim();return s.length>32?s.slice(0,32)+"…":s;};
+ /* 去掉待补充标注/加粗标记与末尾标点，限制单条要点长度 */
+ const clip=s=>{s=String(s||"").replace(/\*\*/g,"").replace(/（待[^）]*）|【[^】]*】/g,"").replace(/^\s*(第[一二三四五六七八九十]+[，、：:]?|[一二三四五六七八九十]+是[、：:，]?)/,"").replace(/[；;。，：:]\s*$/,"").trim();return s.length>36?s.slice(0,36)+"…":s;};
  const chapters=[];let cur=null;
  for(const l of lines){
   if(isAppxHead(l))break;
+  if(/^\|/.test(l)||/^(表|图)\s?\d/.test(l)||/^标题[:：]/.test(l)||/^(汇报)?提纲/.test(l))continue;
   if(H1_RE.test(l)){if(chapters.length>=10)break;cur={t:clip(l.replace(H1_RE,""))||"章节",b:[],body:[]};chapters.push(cur);continue;}
   if(!cur)continue;
-  if(/^\|/.test(l)||/^(表|图)\s?\d/.test(l))continue;
-  if(H2_RE.test(l)){const t=clip(l.replace(H2_RE,""));if(t&&cur.b.length<4)cur.b.push(t);continue;}
-  if(/^(\d+[\.、]|（\d+）|[①-⑩])/.test(l)){const t=clip(l.replace(/^(\d+[\.、]|（\d+）|[①-⑩])/,""));if(t&&cur.b.length<4)cur.b.push(t);continue;}
-  if(l.length>=12)cur.body.push(l);}
+  if(/^[（(][一二三四五六七八九十]+[)）]/.test(l)){const t=clip(l.replace(/^[（(][一二三四五六七八九十]+[)）]/,""));if(t&&!cur.b.includes(t))cur.b.push(t);continue;}
+  if(/^(\d+[\.、]|[（(]\d+[)）]|[①-⑩])/.test(l)){const t=clip(l.replace(/^(\d+[\.、]|[（(]\d+[)）]|[①-⑩])/,""));if(t&&!cur.b.includes(t))cur.b.push(t);continue;}
+  if(l.length>=14)cur.body.push(l);}
+ /* 从章节正文提取关键句：每段首句优先，不足时从后续句子补充（优先长度适中的整句），保证每页要点充实 */
+ const keySentences=(body,max)=>{const out=[];const pool=[];
+  body.forEach(p=>{p.split(/[。；;]/).map(s=>clip(s)).filter(s=>s.length>=12).forEach((s,i)=>pool.push({s,i}));});
+  pool.filter(x=>x.i===0).forEach(x=>{if(out.length<max&&!out.includes(x.s))out.push(x.s);});
+  pool.filter(x=>x.i>0&&x.s.length<=36).forEach(x=>{if(out.length<max&&!out.includes(x.s))out.push(x.s);});
+  pool.filter(x=>x.i>0).forEach(x=>{if(out.length<max&&!out.includes(x.s))out.push(x.s);});
+  return out;};
  const out=["标题："+(project||"方案汇报")];
- if(chapters.length)chapters.forEach(c=>{const b=c.b.slice(0,4);
-  if(!b.length&&c.body.length)b.push(clip(c.body[0]));
-  if(!b.length)b.push(c.t+"要点概述");
-  out.push(c.t);b.forEach(x=>out.push("- "+x));});
+ if(chapters.length){
+  out.push("汇报提纲");chapters.forEach(c=>out.push("- "+c.t));
+  chapters.forEach(c=>{
+   const b=[];c.b.forEach(x=>{if(b.length<3&&!b.includes(x))b.push(x);});
+   keySentences(c.body,4-b.length).forEach(s=>{if(!b.includes(s))b.push(s);});
+   if(!b.length)b.push(c.t+"要点概述");
+   out.push(c.t);b.slice(0,4).forEach(x=>out.push("- "+x));});
+ }
  else{out.push("方案概览");out.push("- "+(lines.slice(0,3).join("；").slice(0,120)||"请先生成方案初稿"));}
  return out.join("\n");
 }
