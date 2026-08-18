@@ -302,7 +302,7 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
             <div class="field"><label>转发服务地址（选填 · 解决浏览器跨域拦截）</label><input id="zwProxy" placeholder="如 https://your-worker.workers.dev；留空则直连讯飞官方接口"></div>
             <button class="btn btn-sm" id="btnZwCors" type="button">ℹ 跨域（CORS）说明与转发方案</button>
           </div>
-          <div class="field" style="margin-top:12px"><label>PPT 大纲（基于终稿按“章标题 / 小节要点”自动提炼，可直接编辑调整后再生成）</label><textarea id="pptOutline" style="min-height:160px"></textarea></div>
+          <div class="field" style="margin-top:12px"><label>PPT 大纲（已配置大模型时自动深度提炼：汇报提纲总览 + 每章观点式要点 + 总结与展望；未配置时按规则提炼；均可直接编辑调整后再生成）</label><textarea id="pptOutline" style="min-height:160px"></textarea></div>
           <div class="gen-acts"><button class="btn btn-primary" id="btnPptRun">⚙ 开始生成 PPT</button><button class="btn" id="btnPptRe" type="button">🔄 重新提炼大纲</button><span id="pptStatus" class="hint"></span></div>
           <div id="pptResult" hidden style="margin-top:10px"><a id="pptDownload" class="btn btn-primary" download>⬇ 下载 PPT</a> <span class="hint">生成后可再次编辑大纲重新生成，直至满意</span></div>
           <div class="llm-note">本地引擎完全离线、免费；讯飞智文按点量计费（约 10 点/次）。讯飞接口为服务端设计：若浏览器直连被跨域（CORS）拦截，请改用本地引擎，或点「跨域说明与转发方案」配置转发服务地址。</div>
@@ -322,6 +322,6 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
   </section>
 </main>
 <div id="mask" hidden><div class="modal" id="modalBox"></div></div>
-<script src="app.js?v=20260818b"></script>
+<script src="app.js?v=20260818c"></script>
 </body>
 </html>
