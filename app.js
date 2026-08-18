@@ -18,7 +18,7 @@ const FONTS=["仿宋","仿宋_GB2312","黑体","楷体","楷体_GB2312","宋体"
 const SIZES=["初号","小初","一号","小一","二号","小二","三号","小三","四号","小四","五号","小五","六号","小六","七号","八号"];
 const SIZE_PT={"初号":42,"小初":36,"一号":26,"小一":24,"二号":22,"小二":18,"三号":16,"小三":15,"四号":14,"小四":12,"五号":10.5,"小五":9,"六号":7.5,"小六":6.5,"七号":5.5,"八号":5};
 const ALIGNS=[["left","左对齐"],["center","居中"],["right","右对齐"],["justify","两端对齐"]];
-const LINE_UNITS=[["times","倍（多倍行距）"],["pt","磅（固定值）"]];
+const LINE_UNITS=[["single","单倍行距"],["1.5","1.5倍行距"],["double","2倍行距"],["atLeast","最小值（磅）"],["pt","固定值（磅）"],["times","多倍行距"]];
 const STRUCT_DEF=`文档标题（大标题）　　（独立设置，不参与下方各级标题格式）
 一、××××××　　　　　（一级标题，章）
 （一）××××××　　　（二级标题，节）
@@ -28,16 +28,23 @@ const STRUCT_DEF=`文档标题（大标题）　　（独立设置，不参与�
 function defStyles(){return{title:{font:"方正小标宋简体",latin:"",size:"二号",bold:1,align:"center",indent:0,lineUnit:"times",lineVal:1.3,spaceBefore:0,spaceAfter:12},h1:{font:"黑体",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h2:{font:"楷体",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h3:{font:"仿宋",latin:"",size:"三号",bold:1,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h4:{font:"仿宋",latin:"",size:"三号",bold:0,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},h5:{font:"仿宋",latin:"",size:"三号",bold:0,align:"left",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},body:{font:"仿宋",latin:"Times New Roman",size:"三号",bold:0,align:"justify",indent:2,lineUnit:"pt",lineVal:28,spaceBefore:0,spaceAfter:0},tbTitle:{font:"黑体",latin:"",size:"小四",bold:1,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:3,spaceAfter:3},table:{font:"宋体",latin:"Times New Roman",size:"小四",bold:0,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:0,spaceAfter:0},fig:{font:"楷体",latin:"",size:"小四",bold:0,align:"center",indent:0,lineUnit:"times",lineVal:1,spaceBefore:3,spaceAfter:3}};}
 
 /* 旧格式兼容归一：老数据的 line（单倍/1.5倍/2倍/固定28磅）→ lineUnit+lineVal；space → spaceBefore/spaceAfter */
-const LINE_OLD={"单倍":["times",1],"1.5倍":["times",1.5],"2倍":["times",2],"固定28磅":["pt",28]};
+const LINE_OLD={"单倍":["single",1],"1.5倍":["1.5",1.5],"2倍":["double",2],"固定28磅":["pt",28]};
 function normStyle(st){
  if(!st||typeof st!="object")return st;
  if(st.lineUnit===undefined){const old=LINE_OLD[st.line];if(old){st.lineUnit=old[0];st.lineVal=old[1];}else{st.lineUnit="times";st.lineVal=1;}}
  if(st.spaceBefore===undefined)st.spaceBefore=Number(st.space)||0;
  if(st.spaceAfter===undefined)st.spaceAfter=Number(st.space)||0;
  if(st.latin===undefined)st.latin="";
+ if(st.indentUnit===undefined)st.indentUnit="char";
  return st;
 }
-function lineText(st){if(!st)return"";normStyle(st);return st.lineUnit==="pt"?`固定${st.lineVal}磅`:`${st.lineVal}倍`;}
+function lineText(st){if(!st)return"";normStyle(st);
+ if(st.lineUnit==="pt")return `固定${st.lineVal}磅`;
+ if(st.lineUnit==="atLeast")return `最小${st.lineVal}磅`;
+ if(st.lineUnit==="single")return"单倍行距";
+ if(st.lineUnit==="double")return"2倍行距";
+ if(st.lineUnit==="1.5")return"1.5倍行距";
+ return `${st.lineVal}倍`;}
 /* 行文连贯处理：去掉全文空行（不影响表格/目录解析），保证段落之间不空行 */
 function compactText(t){return String(t||"").split(/\r?\n/).filter(l=>l.trim()).join("\n");}
 
@@ -383,11 +390,11 @@ function fmtRow(key,label,st){
  <select id="fs_${key}_latin" title="数字、英文字体">${latinOpts.map(f=>`<option ${st.latin===(f==="同中文字体"?"":f)?"selected":""}>${f}</option>`).join("")}</select>
  <select id="fs_${key}_size">${SIZES.map(s=>`<option ${st.size===s?"selected":""}>${s}</option>`).join("")}</select>
  <select id="fs_${key}_align">${ALIGNS.map(a=>`<option value="${a[0]}" ${st.align===a[0]?"selected":""}>${a[1]}</option>`).join("")}</select>
- <select id="fs_${key}_lineUnit">${LINE_UNITS.map(u=>`<option value="${u[0]}" ${st.lineUnit===u[0]?"selected":""}>${u[1]}</option>`).join("")}</select>
- <input id="fs_${key}_lineVal" type="number" min="0" step="0.1" value="${st.lineVal}" title="行距数值">
- <select id="fs_${key}_indent"><option value="0" ${!st.indent?"selected":""}>无</option><option value="2" ${st.indent?"selected":""}>2字符</option></select>
- <input id="fs_${key}_spaceBefore" type="number" min="0" step="1" value="${st.spaceBefore}" title="段前间距（磅）">
- <input id="fs_${key}_spaceAfter" type="number" min="0" step="1" value="${st.spaceAfter}" title="段后间距（磅）">
+ <select id="fs_${key}_lineUnit" title="行距类型（与 Word 行距选项一致）">${LINE_UNITS.map(u=>`<option value="${u[0]}" ${st.lineUnit===u[0]?"selected":""}>${u[1]}</option>`).join("")}</select>
+ <input id="fs_${key}_lineVal" type="number" min="0" step="0.1" value="${st.lineVal}" title="行距数值（单倍/1.5倍/2倍为固定值）">
+ <div style="display:flex;gap:3px"><input id="fs_${key}_indent" type="number" min="0" step="0.5" value="${st.indent||0}" title="首行缩进数值"><select id="fs_${key}_indentUnit" title="首行缩进单位" style="width:58px;flex:none"><option value="char" ${st.indentUnit!=="pt"?"selected":""}>字符</option><option value="pt" ${st.indentUnit==="pt"?"selected":""}>磅</option></select></div>
+ <input id="fs_${key}_spaceBefore" type="number" min="0" step="0.1" value="${st.spaceBefore}" title="段前间距（磅，可精确到0.1）">
+ <input id="fs_${key}_spaceAfter" type="number" min="0" step="0.1" value="${st.spaceAfter}" title="段后间距（磅，可精确到0.1）">
  <input type="checkbox" id="fs_${key}_bold" ${st.bold?"checked":""} title="加粗"></div>`;
 }
 function formatForm(id){
@@ -401,15 +408,19 @@ function formatForm(id){
  <div class="chklist">${FMT_ELS.map(([k,l])=>`<label class="chk"><input type="checkbox" class="mfel" value="${k}" ${checked.includes(k)?"checked":""}><span class="n">${l}</span></label>`).join("")}</div></div>
  <div class="field"><label>结构格式（标题层级）</label><textarea id="mStruct" style="min-height:110px">${esc(f.structure||STRUCT_DEF)}</textarea></div>
  <div class="field"><label>所选对象的格式（字体 / 数字英文字体 / 字号 / 对齐 / 行距单位+数值 / 首行缩进 / 段前 / 段后 / 加粗）</label>
- <div class="fmt-head"><span>元素</span><span>字体</span><span>数字英文</span><span>字号</span><span>对齐</span><span>行距单位</span><span>行距值</span><span>缩进</span><span>段前pt</span><span>段后pt</span><span>加粗</span></div>
+ <div class="fmt-head"><span>元素</span><span>字体</span><span>数字英文</span><span>字号</span><span>对齐</span><span>行距单位</span><span>行距值</span><span>首行缩进</span><span>段前pt</span><span>段后pt</span><span>加粗</span></div>
  ${FMT_ELS.map(([k,l])=>`<div class="fmtelwrap" data-el="${k}" style="${checked.includes(k)?"":"display:none"}">${fmtRow(k,l,st[k]||defStyles()[k])}</div>`).join("")}</div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  $$(".mfel").forEach(cb=>cb.onchange=()=>{const w=document.querySelector(`.fmtelwrap[data-el="${cb.value}"]`);if(w)w.style.display=cb.checked?"":"none";});
+ /* 行距单位联动：单倍/1.5倍/2倍为固定值（隐藏数值框），最小值/固定值/多倍可自定义数值 */
+ FMT_ELS.forEach(([k])=>{const u=$("#fs_"+k+"_lineUnit"),v=$("#fs_"+k+"_lineVal");if(!u||!v)return;
+  const sync=()=>{const fixed={"single":1,"1.5":1.5,"double":2}[u.value];if(fixed!=null){v.value=fixed;v.style.visibility="hidden";}else v.style.visibility="";};
+  u.addEventListener("change",sync);sync();});
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const name=$("#mName").value.trim();if(!name){alert("请填写格式名称");return;}
   const sel=$$(".mfel").filter(c=>c.checked).map(c=>c.value);
   if(!sel.length){alert("请至少勾选一个要配置的对象（如一级标题、正文等）");return;}
-  const styles={};sel.forEach(k=>{const latin=$(`#fs_${k}_latin`).value;styles[k]=normStyle({font:$(`#fs_${k}_font`).value,latin:latin==="同中文字体"?"":latin,size:$(`#fs_${k}_size`).value,align:$(`#fs_${k}_align`).value,lineUnit:$(`#fs_${k}_lineUnit`).value,lineVal:parseFloat($(`#fs_${k}_lineVal`).value)||1,indent:parseInt($(`#fs_${k}_indent`).value,10)||0,spaceBefore:parseInt($(`#fs_${k}_spaceBefore`).value,10)||0,spaceAfter:parseInt($(`#fs_${k}_spaceAfter`).value,10)||0,bold:$(`#fs_${k}_bold`).checked?1:0});});
+  const styles={};sel.forEach(k=>{const latin=$(`#fs_${k}_latin`).value;styles[k]=normStyle({font:$(`#fs_${k}_font`).value,latin:latin==="同中文字体"?"":latin,size:$(`#fs_${k}_size`).value,align:$(`#fs_${k}_align`).value,lineUnit:$(`#fs_${k}_lineUnit`).value,lineVal:parseFloat($(`#fs_${k}_lineVal`).value)||1,indent:parseFloat($(`#fs_${k}_indent`).value)||0,indentUnit:$(`#fs_${k}_indentUnit`).value,spaceBefore:Math.round((parseFloat($(`#fs_${k}_spaceBefore`).value)||0)*10)/10,spaceAfter:Math.round((parseFloat($(`#fs_${k}_spaceAfter`).value)||0)*10)/10,bold:$(`#fs_${k}_bold`).checked?1:0});});
   const data={name,structure:$("#mStruct").value,styles};
   if(id)Object.assign(f,data);else db.formats.push({id:uid(),...data});
   if(!persist())return;closeModal();renderAll();toast("已保存，可在生成台套用");};
@@ -596,7 +607,7 @@ $("#btnTestModel").onclick=async()=>{
 /* ---------- 生成：提示词 + 流式调用 + 本地模板 ---------- */
 function parseWan(s){const m=String(s||"").match(/(\d+(?:\.\d+)?)\s*万/);if(m)return parseFloat(m[1]);const m2=String(s||"").replace(/[,，]/g,"").match(/(\d{4,7})(?!\d)/);return m2?Math.round(parseInt(m2,10)/10000):0;}
 function wrapName(n){return /[《〈]/.test(n)?n:"《"+n+"》";}
-function fmtSpecText(f){if(!f)return"";const L=FMT_ELS.map(([k,l])=>{const s=f.styles&&f.styles[k]?normStyle(f.styles[k]):null;if(!s)return"";return `${l}：${s.font}${s.latin?`（数字英文用${s.latin}）`:""} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}字符 行距${lineText(s)} 段前${s.spaceBefore||0}pt 段后${s.spaceAfter||0}pt`;}).filter(Boolean);return `结构格式：\n${f.structure||""}${L.length?`\n各级格式：${L.join("；")}`:""}`;}
+function fmtSpecText(f){if(!f)return"";const L=FMT_ELS.map(([k,l])=>{const s=f.styles&&f.styles[k]?normStyle(f.styles[k]):null;if(!s)return"";return `${l}：${s.font}${s.latin?`（数字英文用${s.latin}）`:""} ${s.size}${s.bold?" 加粗":""} ${ALIGNS.find(a=>a[0]===s.align)?.[1]||""} 首行缩进${s.indent||0}${s.indentUnit==="pt"?"磅":"字符"} 行距${lineText(s)} 段前${s.spaceBefore||0}pt 段后${s.spaceAfter||0}pt`;}).filter(Boolean);return `结构格式：\n${f.structure||""}${L.length?`\n各级格式：${L.join("；")}`:""}`;}
 function buildMessages(project,school,major,type,prods,hw,pols,tpls,words,funds,skills,fmt,tplText,budget){
  const rules=["使用正式书面语，标题层级用“一、/（一）/1./（1）/①”五级；",
  "政策依据必须自然融入行文：把用户勾选政策的要点有机编织进“建设背景与政策依据”等相关章节的论述中，在段落行文内顺势引用政策名称与文号（如“根据《××》（×发〔20××〕×号）关于……的要求，本项目……”），让政策精神与项目论证浑然一体；严禁采用“政策一：……；政策二：……”的清单式罗列，严禁单独设立仅逐条列举政策名称与要点的段落，不得编造任何政策文件名或文号；",
@@ -820,11 +831,17 @@ $("#btnChatSend").onclick=sendChat;
 $("#chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}});
 
 /* ---------- 结果操作 ---------- */
-/* 生成 Word 可识别的段落样式：首行缩进按字号换算为磅值、行距用百分比（固定值用磅值+exactly），避免 Word 忽略 em/无单位行高 */
+/* 生成 Word 可识别的段落样式：首行缩进按字符(em)/磅(pt)输出、行距支持 Word 全部六种单位，避免 Word 忽略无单位行高 */
 function cssFor(st){if(!st)return "";normStyle(st);const fam=st.latin?`'${st.latin}','${st.font}',serif`:`'${st.font}',serif`;
  const pt=SIZE_PT[st.size]||14;
- const lh=st.lineUnit==="pt"?`${st.lineVal}pt;mso-line-height-rule:exactly`:`${Math.round((st.lineVal||1)*100)}%`;
- const indent=st.indent?`text-indent:${st.indent*pt}pt;`:"";
+ /* 行距六种单位（与 Word 一致）：单倍/1.5倍/2倍为百分比；最小值 atLeast、固定值 exactly 用磅值；多倍按倍数百分比 */
+ const LH={"single":"100%","1.5":"150%","double":"200%"};
+ const lh=LH[st.lineUnit]?LH[st.lineUnit]
+  :st.lineUnit==="pt"?`${st.lineVal}pt;mso-line-height-rule:exactly`
+  :st.lineUnit==="atLeast"?`${st.lineVal}pt;mso-line-height-rule:atLeast`
+  :`${Math.round((st.lineVal||1)*100)}%`;
+ /* 首行缩进：单位选字符时用 em（Word 中显示为“首行缩进 N 字符”），选磅时用 pt */
+ const indent=st.indent?`text-indent:${st.indent}${st.indentUnit==="pt"?"pt":"em"};`:"";
  return `font-family:${fam};font-size:${pt}pt;${st.bold?"font-weight:bold;":"font-weight:normal;"}text-align:${st.align};${indent}line-height:${lh};margin:${st.spaceBefore||0}pt 0 ${st.spaceAfter||0}pt 0;`;}
 /* 待补充/注释内容识别：（待核实/待补充/待确认/待填写/待提供…）与【…】标注，预览与导出 Word 时标红提醒 */
 const TODO_RE=/（待(?:核实|补充|确认|填写|提供)[^）]{0,80}）|【[^】]{0,80}】/g;
