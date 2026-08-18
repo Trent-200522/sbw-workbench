@@ -121,6 +121,18 @@ async function hydrateBig(){const jobs=[];
  for(const list in BIG_FIELDS){const f=BIG_FIELDS[list];for(const r of (db[list]||[])){if(isBigMark(r[f])){const k=r[f].__big;jobs.push(bigGet(k).then(v=>{r[f]=v==null?"":v;}).catch(()=>{r[f]="";}));}}}
  if(db.final&&isBigMark(db.final.text)){jobs.push(bigGet("final/text").then(v=>{db.final.text=v==null?"":v;}).catch(()=>{db.final.text="";}));}
  await Promise.all(jobs);}
+/* 向浏览器申请持久存储保护：降低磁盘空间紧张时 IndexedDB/localStorage 被浏览器自动清理的风险 */
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().then(ok=>{window.__storagePersisted=ok;}).catch(()=>{});
+/* 实时显示存储占用：元数据（localStorage）+ 长文档等（IndexedDB），方便掌握容量余量 */
+function renderStorageInfo(){const el=$("#storageInfo");if(!el)return;
+ const fmtB=n=>n>=1048576?(n/1048576).toFixed(1)+" MB":Math.max(1,Math.round(n/1024))+" KB";
+ const lsBytes=(localStorage.getItem(LS)||"").length*2;
+ if(navigator.storage&&navigator.storage.estimate){navigator.storage.estimate().then(e=>{
+  const ratio=e.quota?(e.usage||0)/e.quota:0;
+  const tip=ratio>0.8?"⚠ 占用率已超 80%，建议导出 JSON 备份并清理旧条目":"可用容量充足";
+  el.textContent=`存储占用：元数据 ${fmtB(lsBytes)} / 长文档等 ${fmtB(e.usage||0)}（浏览器配额约 ${fmtB(e.quota||0)}）· ${tip}${window.__storagePersisted?" · 已开启持久存储保护 ✔":""}`;
+ }).catch(()=>{});}
+}
 db.llm=db.llm||{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};
 db.ppt=db.ppt||{engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto",zwProxy:""};
 if(db.ppt.zwProxy===undefined)db.ppt.zwProxy="";
@@ -299,7 +311,7 @@ function syncSkillDesc(){const ks=$$(".gskill:checked").map(c=>db.skills.find(x=
 function syncLlmUi(){$("#llmProvider").value=db.llm.provider||"deepseek";$("#llmBase").value=db.llm.baseUrl||"";$("#llmModel").value=db.llm.model||"";$("#llmKey").value=db.llm.key||"";syncModelList();}
 const MODEL_HINTS={deepseek:["deepseek-chat（对话模型，性价比高）","deepseek-reasoner（深度推理）"],qwen:["qwen3-max（旗舰最强，长文推荐）","qwen-plus（均衡推荐）","qwen-turbo（快速）","qwen-max（旗舰别名）","qwen-long（超长文本）"],doubao:["doubao-1-5-pro-32k（推荐）","doubao-1-5-lite-32k（快速）","doubao-seed-1-6-250615"],custom:[]};
 function syncModelList(){$("#modelList").innerHTML=(MODEL_HINTS[db.llm.provider]||[]).map(m=>`<option value="${m.split("（")[0]}">${m}</option>`).join("");}
-function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();syncPptUi();syncFinalUi();syncPptSrcStatus();}
+function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();syncPptUi();syncFinalUi();syncPptSrcStatus();renderStorageInfo();}
 
 /* ---------- 弹窗与表单 ---------- */
 function openModal(html){$("#modalBox").innerHTML=html;$("#mask").hidden=false;}
