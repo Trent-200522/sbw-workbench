@@ -312,7 +312,7 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
 
   <section class="foot">
     <div class="card"><h3>数据安全</h3>
-      <p>所有数据保存在本浏览器 localStorage 中，刷新、关闭页面不丢失。建议每周导出一次 JSON 备份。<br>页面部署到线上后为公开链接，请勿预填真实敏感数据。</p>
+      <p>所有数据保存在<b>本浏览器</b>中：常规数据存 localStorage，长文档（方案全文/政策原文等）自动转存浏览器大容量存储（IndexedDB，容量可达数百 MB 以上），刷新、关闭页面不丢失。<b>数据不会跨设备自动同步</b>：换电脑时，在旧电脑点「⬇ 导出备份」保存 JSON（含全部长文档全文），到新电脑点「⬆ 导入恢复」即可一键完整迁移。建议每周导出一次 JSON 备份。页面部署到线上后为公开链接，请勿预填真实敏感数据。<br><span id="storageInfo" style="color:#6b7280"></span></p>
       <button class="btn" id="btnExport2">⬇ 导出 JSON</button>
       <button class="btn" id="btnImport2" style="margin-left:8px">⬆ 导入恢复</button></div>
     <div class="card"><h3>数据清理</h3>
@@ -322,6 +322,6 @@ details.gmore .gmlist{padding:0 10px 10px;max-height:260px;overflow:auto}
   </section>
 </main>
 <div id="mask" hidden><div class="modal" id="modalBox"></div></div>
-<script src="app.js?v=20260818d"></script>
+<script src="app.js?v=20260818e"></script>
 </body>
 </html>
