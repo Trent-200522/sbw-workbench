@@ -208,9 +208,9 @@ function renderProposals(){
  $("#propGrid").innerHTML=list.map(p=>`<div class="card item">
   <div class="head"><b>${esc(p.title)}</b><span class="tag ${p.type==="建设方案"?"green":""}">${esc(p.type)}</span></div>
   <div class="row"><span class="k">客户：</span><b>${esc(p.client)}</b>　<span class="k">年份：</span><b>${esc(p.year)}</b></div>
-  <div class="row"><span class="k">要点：</span>${esc(p.keypoints)}</div>
+  ${p.keypoints?`<div class="row"><span class="k">要点：</span>${esc(p.keypoints)}</div>`:""}
   <div class="row"><span class="k">可复用内容：</span>${esc(textOf(p.content).replace(/\s+/g," ").slice(0,120))}${textOf(p.content).length>120?"…":""}</div>
-  <div class="acts"><button class="btn btn-sm" data-act="copy" data-id="${p.id}">⧉ 复制要点</button>
+  <div class="acts">${p.keypoints?`<button class="btn btn-sm" data-act="copy" data-id="${p.id}">⧉ 复制要点</button>`:""}
   <button class="btn btn-sm" data-act="edit" data-kind="proposal" data-id="${p.id}">✎ 编辑</button>
   <button class="btn btn-sm btn-danger" data-act="del" data-kind="proposal" data-id="${p.id}">🗑 删除</button></div></div>`).join("")||EMPTY;
 }
@@ -459,7 +459,6 @@ function proposalForm(id){
  <div class="field"><label>类型</label><select id="mType"><option ${p.type==="项目申报书"?"selected":""}>项目申报书</option><option ${p.type==="建设方案"?"selected":""}>建设方案</option></select></div>
  <div class="field"><label>客户学校</label><input id="mClient" value="${esc(p.client)}"></div>
  <div class="field"><label>年份</label><input id="mYear" value="${esc(p.year)}"></div>
- <div class="field"><label>要点</label><textarea id="mKeys">${esc(p.keypoints)}</textarea></div>
  <div class="field"><label>可复用内容（正文摘录，上传保留原格式）　<button class="btn btn-sm" type="button" id="mUp1">📎 上传 Word/PDF/Excel/txt（自动识别标题/类型/客户学校，可再调整）</button><input type="file" id="mFile1" accept=".txt,.md,.docx,.doc,.pdf,.xlsx,.xls,.csv" hidden></label><div class="rte" id="mContent" contenteditable="true" style="min-height:150px">${/<[a-z][\s\S]*>/i.test(p.content)?p.content:esc(p.content).replace(/\r?\n/g,"<br>")}</div></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
  $("#mUp1").onclick=()=>$("#mFile1").click();
@@ -474,8 +473,9 @@ function proposalForm(id){
    $("#mContent").innerHTML+=($("#mContent").innerHTML?"<br>":"")+r.html;toast("已导入并自动识别标题/类型/客户学校，可自行调整");}catch(err){alert("解析失败："+err.message);}e.target.value="";};
  $("#mCancel").onclick=closeModal;
  $("#mOk").onclick=()=>{const title=$("#mTitle").value.trim();if(!title){alert("请填写标题");return;}
-  const data={title,type:$("#mType").value,client:$("#mClient").value.trim(),year:$("#mYear").value.trim(),keypoints:$("#mKeys").value.trim(),content:$("#mContent").innerHTML.trim()};
-  if(id)Object.assign(p,data);else db.proposals.push({id:uid(),...data});
+  /* 要点栏已移除：编辑时保留原要点数据，新增时置空 */
+  const data={title,type:$("#mType").value,client:$("#mClient").value.trim(),year:$("#mYear").value.trim(),content:$("#mContent").innerHTML.trim()};
+  if(id)Object.assign(p,data);else db.proposals.push({id:uid(),keypoints:"",...data});
   if(!persist())return;closeModal();renderAll();toast("已保存");};
 }
 function policyForm(id){
@@ -876,7 +876,7 @@ $("#btnRedPreview").onclick=()=>{const t=$("#genResult").value;if(!t.trim()){ale
 $("#btnCopyAll").onclick=()=>{const t=$("#genResult").value;if(!t.trim()){alert("暂无内容");return;}copyText(t);};
 $("#btnSaveProp").onclick=()=>{const t=$("#genResult").value.trim();if(!t){alert("请先生成内容");return;}
  const project=$("#fProject").value.trim()||"未命名项目";const type=$("#fType").value;const school=$("#fSchool").value.trim()||"待定";
- db.proposals.push({id:uid(),title:`${project}（${type}·生成稿）`,type:/(建设方案|报价方案)/.test(type)?"建设方案":"项目申报书",client:school,year:String(new Date().getFullYear()),keypoints:"由方案生成台于 "+todayStr()+" 生成",content:t});
+ db.proposals.push({id:uid(),title:`${project}（${type}·生成稿）`,type:/(建设方案|报价方案)/.test(type)?"建设方案":"项目申报书",client:school,year:String(new Date().getFullYear()),keypoints:"",content:t});
  persist();renderAll();toast("已存入方案文库");};
 $("#btnWord").onclick=()=>{const text=$("#genResult").value;if(!text.trim()){alert("请先生成内容");return;}
  const fmt=db.formats.find(f=>f.id===$("#fFormat").value)||null;
