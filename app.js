@@ -690,10 +690,10 @@ function insertToc(text){
  else lines.splice(ti+1,0,"",...toc);
  return lines.join("\n");
 }
-/* Word 导出用 TOC 域：正文一/二级标题为 h2/h3（Word 标题2/3），域 \o "2-3" 收集，\h 支持点击跳转；打开后右键“更新域”生成带页码目录 */
+/* Word 导出用 TOC 域：导出后章节段落带大纲级别 2/3（样式仍为正文），域 \o "2-3" 收集，\h 支持点击跳转；打开后右键“更新域”生成带页码目录 */
 function wordTocField(fmt){
  const headCss=fmt&&fmt.styles.tbTitle?cssFor(fmt.styles.tbTitle):"font-size:16pt;font-weight:bold";
- return `<p style="text-align:center;${headCss}">目　录</p><p><span style='mso-element:field-begin'></span><span style='mso-hide:all'>TOC \\o "2-3" \\h \\z \\u</span><span style='mso-element:field-separator'></span><span style="color:#666">目录将自动生成：请在 Word 中右键此处选择“更新域”，即可得到带页码的目录，按住 Ctrl 点击目录条目可跳转对应章节。</span><span style='mso-element:field-end'></span></p><br>`;
+ return `<p class="MsoNormal" style="text-align:center;${headCss}">目　录</p><p class="MsoNormal"><span style='mso-element:field-begin'></span><span style='mso-hide:all'>TOC \\o "2-3" \\h \\z \\u</span><span style='mso-element:field-separator'></span><span style="color:#666">目录将自动生成：请在 Word 中右键此处选择“更新域”，即可得到带页码的目录，按住 Ctrl 点击目录条目可跳转对应章节。</span><span style='mso-element:field-end'></span></p><br>`;
 }
 function html2mdLines(html){
  const doc=new DOMParser().parseFromString(html,"text/html");const out=[];
@@ -834,13 +834,28 @@ $("#btnWord").onclick=()=>{const text=$("#genResult").value;if(!text.trim()){ale
  const title=($("#fProject").value.trim()||"方案")+"_"+$("#fType").value;
  exportWordDoc(text,title,fmt);
  toast(fmt?`已导出 Word（套用格式：${fmt.name}）`:"已导出 Word");};
-/* 统一的 Word 导出管线：纯文本目录替换为 TOC 域、套用格式样式 */
+/* Word 导出“扁平化”：标题标签 h1~h5 一律改为普通正文段落（MsoNormal）+ 直接格式，
+   避免 Word 把标签映射成内置“标题 1~5”样式（标题变 H1、编号条目变蓝色标题样式）；
+   一级章（一、）/二级节（（一））保留大纲级别 2/3 供 TOC 域收集，文档标题不设大纲级别 */
+function wordFlatten(bodyHtml){
+ const OUTLINE={h2:2,h3:3};const tds=[];
+ bodyHtml=bodyHtml.replace(/<td style="[^"]*">[\s\S]*?<\/td>/g,m=>{tds.push(m);return "\u0000"+(tds.length-1)+"\u0000";});
+ bodyHtml=bodyHtml.replace(/<(h[1-5])([^>]*)>([\s\S]*?)<\/\1>/g,(m,tag,attrs,inner)=>{
+  const ol=OUTLINE[tag]?"mso-outline-level:"+OUTLINE[tag]+";":"";
+  const style=(attrs.match(/style="([^"]*)"/)||[])[1]||"";
+  return `<p class="MsoNormal" style="${ol}${style}">${inner}</p>`;});
+ bodyHtml=bodyHtml.replace(/<p>/g,'<p class="MsoNormal">').replace(/<p style=/g,'<p class="MsoNormal" style=');
+ return bodyHtml.replace(/\u0000(\d+)\u0000/g,(m,i)=>tds[+i]);
+}
+/* 统一的 Word 导出管线：纯文本目录替换为 TOC 域、套用格式样式；全部段落为 Word“正文”样式+直接格式，严格按用户配置的格式输出 */
 function exportWordDoc(text,fileName,fmt){
- let bodyHtml=md2html(stripTocBlock(text.split(/\r?\n/)).join("\n"),fmt);
+ let bodyHtml=wordFlatten(md2html(stripTocBlock(text.split(/\r?\n/)).join("\n"),fmt));
  const tocField=wordTocField(fmt);
- if(/^<h1/.test(bodyHtml)){const p=bodyHtml.indexOf("</h1>")+5;bodyHtml=bodyHtml.slice(0,p)+tocField+bodyHtml.slice(p);}
+ const i=bodyHtml.indexOf("</p>");
+ if(i>=0)bodyHtml=bodyHtml.slice(0,i+4)+tocField+bodyHtml.slice(i+4);
  else bodyHtml=tocField+bodyHtml;
- const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(fileName)}</title></head><body>${bodyHtml}</body></html>`;
+ const css=`@page WordSection1{size:595.3pt 841.9pt;margin:72.0pt 90.0pt 72.0pt 90.0pt;}div.WordSection1{page:WordSection1;}body{font-family:'宋体',serif;font-size:12.0pt;color:#000;}p.MsoNormal{margin:0cm;font-size:12.0pt;font-family:'宋体',serif;color:#000;}`;
+ const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(fileName)}</title><style>${css}</style></head><body><div class="WordSection1">${bodyHtml}</div></body></html>`;
  const blob=new Blob(["\ufeff",html],{type:"application/msword"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fileName+".doc";a.click();}
 
