@@ -1028,8 +1028,53 @@ function syncPptSrcStatus(){const el=$("#pptSrcStatus");if(!el)return;
  el.textContent=db.final&&db.final.text?`内容来源：修订后形成的终稿（${new Date(db.final.time).toLocaleString()} 形成）`:`内容来源：当前生成结果（尚未形成终稿：建议在修订对话框填入待补充信息后点「✅ 形成终稿」）`;}
 let pptLastSrc="";
 function refreshPptOutline(force){const src=pptSrcText();syncPptSrcStatus();if(!src.trim())return;
- if(force||src!==pptLastSrc||!$("#pptOutline").value.trim()){$("#pptOutline").value=extractPptOutline(src,$("#fProject").value.trim()||"方案汇报");pptLastSrc=src;}}
-$("#btnPptRe").onclick=()=>{if(!pptSrcText().trim()){toast("暂无可用内容：请先生成初稿或确认终稿");return;}refreshPptOutline(true);toast("已按最新内容重新提炼 PPT 大纲");};
+ if(force||src!==pptLastSrc||!$("#pptOutline").value.trim()){$("#pptOutline").value=extractPptOutline(src,$("#fProject").value.trim()||"方案汇报");pptLastSrc=src;
+  llmRefineOutline(src);}}
+/* 大模型提炼大纲：已配置 Key 时用大模型对终稿深度归纳生成高质量汇报大纲（先用规则版占位，生成完毕后替换），失败/未配置时保留规则版 */
+let outlineJob=0;
+async function llmRefineOutline(src){
+ if(!db.llm.key||!db.llm.baseUrl)return;
+ const job=++outlineJob;const st=$("#pptStatus");const project=$("#fProject").value.trim()||"方案汇报";
+ if(st)st.textContent="⏳ 大模型正在深度提炼 PPT 大纲（约 10~30 秒，未完成前请勿编辑大纲框）…";
+ try{
+  const ac=new AbortController();const timer=setTimeout(()=>ac.abort(),90000);
+  let out="";
+  await streamChat([
+   {role:"system",content:"你是资深汇报 PPT 策划专家，擅长把长篇方案提炼成可直接用于制作 PPT 的演讲大纲。"},
+   {role:"user",content:`下面是方案文稿（可能是节选），请为“${project}”提炼一份高质量汇报 PPT 大纲。
+输出格式硬性要求（逐行输出，不得输出任何解释、序号前缀、Markdown 标记）：
+第一行：标题：汇报主标题（基于项目名，16 字内）
+第二行：汇报提纲（总览页页标题）
+接下来每章一节：先单独一行输出页标题（6~18 字，不带一、/（一）等编号），其下输出 3~4 行要点，每行以“- ”开头，每条 8~28 字、是观点式短句（动词或名词开头，不写完整长句、不保留（待…）占位、不用问号感叹号）。
+结构要求：先一页“汇报提纲”总览（其下要点为各章页标题列表），随后每章一页，共 6~10 页；最后一页固定为“总结与展望”，要点从文稿的预期效益/保障措施/下一步计划中提炼。
+内容必须全部来自文稿实质内容（建设内容、目标、方案、预算、进度、效益等），严禁空话套话，严禁编造文稿中没有的数据。
+文稿如下：
+"""\n${src.slice(0,16000)}\n"""`}],t=>{out+=t;},ac.signal);
+  clearTimeout(timer);
+  if(job!==outlineJob||pptSrcText()!==src)return;
+  const cleaned=cleanLlmOutline(out,project);
+  if(cleaned){$("#pptOutline").value=cleaned;if(st)st.textContent="✅ 已由大模型深度提炼大纲（可继续编辑调整后生成 PPT）";}
+  else if(st)st.textContent="";
+ }catch(e){if(job===outlineJob&&st)st.textContent="大模型提炼未成功（"+e.message+"），已保留规则提炼版大纲，可直接编辑使用";}
+}
+/* 清洗大模型返回：只保留符合大纲格式的行，纠正页标题编号与要点符号 */
+function cleanLlmOutline(raw,project){
+ const lines=String(raw||"").split(/\r?\n/).map(l=>l.trim().replace(/```/g,"").trim()).filter(Boolean);
+ const out=[];let first=true;
+ for(let l of lines){
+  /* 过滤大模型的解释性/寒暄性语句，不混入大纲 */
+  if(/^(好的|当然|可以|以下是|上面是|以上是|希望|如有|如需|这份|该大纲|祝|谢谢)/.test(l)||/[！!]$/.test(l))continue;
+  if(/^标题[:：]/.test(l)){if(first){out.push(l);first=false;}continue;}
+  first=false;
+  if(/^[-•*·]/.test(l)){const t=l.replace(/^[-•*·]\s*/,"").replace(/^\d+[\.、)]\s*/,"");if(t&&t.length<=40)out.push("- "+t);continue;}
+  l=l.replace(/^#{1,6}\s*/,"").replace(/^第?[一二三四五六七八九十\d]+[、\.．)）:：]\s*/,"");
+  if(l&&l.length<=24)out.push(l);
+ }
+ if(!out.length)return "";
+ if(!/^标题[:：]/.test(out[0]))out.unshift("标题："+project);
+ return out.slice(0,80).join("\n");
+}
+$("#btnPptRe").onclick=()=>{if(!pptSrcText().trim()){toast("暂无可用内容：请先生成初稿或确认终稿");return;}refreshPptOutline(true);toast(db.llm.key?"正在用大模型重新提炼大纲，请稍候…":"已按最新内容重新提炼 PPT 大纲");};
 /* ---------- 讯飞智文跨域（CORS）说明与转发方案 ---------- */
 const ZW_WORKER=`export default{
  async fetch(req){
