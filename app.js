@@ -321,7 +321,7 @@ function syncModelList(){$("#modelList").innerHTML=(MODEL_HINTS[db.llm.provider]
 function renderAll(){renderTodos();renderProducts();renderHardware();renderProposals();renderPolicies();renderFormats();renderSkillHub();renderGen();syncLlmUi();syncPptUi();syncFinalUi();syncPptSrcStatus();renderStorageInfo();}
 
 /* ---------- 弹窗与表单 ---------- */
-function openModal(html){$("#modalBox").innerHTML=html;$("#mask").hidden=false;}
+function openModal(html){$("#modalBox").classList.remove("wide");$("#modalBox").innerHTML=html;$("#mask").hidden=false;}
 function closeModal(){$("#mask").hidden=true;}
 $("#mask").addEventListener("click",e=>{if(e.target.id==="mask")closeModal();});
 async function parseFile(f){if(/\.doc$/i.test(f.name)){const t=extractDocText(await f.arrayBuffer());if(!t)throw new Error("未能从 .doc 提取到文本，请在 Word 中另存为 .docx 后上传");return{html:esc(t).replace(/\r?\n/g,"<br>"),text:t};}
@@ -392,7 +392,7 @@ function fmtRow(key,label,st){
  <select id="fs_${key}_align">${ALIGNS.map(a=>`<option value="${a[0]}" ${st.align===a[0]?"selected":""}>${a[1]}</option>`).join("")}</select>
  <select id="fs_${key}_lineUnit" title="行距类型（与 Word 行距选项一致）">${LINE_UNITS.map(u=>`<option value="${u[0]}" ${st.lineUnit===u[0]?"selected":""}>${u[1]}</option>`).join("")}</select>
  <input id="fs_${key}_lineVal" type="number" min="0" step="0.1" value="${st.lineVal}" title="行距数值（单倍/1.5倍/2倍为固定值）">
- <div style="display:flex;gap:3px"><input id="fs_${key}_indent" type="number" min="0" step="0.5" value="${st.indent||0}" title="首行缩进数值"><select id="fs_${key}_indentUnit" title="首行缩进单位" style="width:58px;flex:none"><option value="char" ${st.indentUnit!=="pt"?"selected":""}>字符</option><option value="pt" ${st.indentUnit==="pt"?"selected":""}>磅</option></select></div>
+ <div style="display:flex;gap:3px;min-width:0"><input id="fs_${key}_indent" type="number" min="0" step="0.5" value="${st.indent||0}" title="首行缩进数值" style="flex:1 1 0;min-width:36px;width:auto"><select id="fs_${key}_indentUnit" title="首行缩进单位" style="width:56px;flex:none"><option value="char" ${st.indentUnit!=="pt"?"selected":""}>字符</option><option value="pt" ${st.indentUnit==="pt"?"selected":""}>磅</option></select></div>
  <input id="fs_${key}_spaceBefore" type="number" min="0" step="0.1" value="${st.spaceBefore}" title="段前间距（磅，可精确到0.1）">
  <input id="fs_${key}_spaceAfter" type="number" min="0" step="0.1" value="${st.spaceAfter}" title="段后间距（磅，可精确到0.1）">
  <input type="checkbox" id="fs_${key}_bold" ${st.bold?"checked":""} title="加粗"></div>`;
@@ -408,9 +408,11 @@ function formatForm(id){
  <div class="chklist">${FMT_ELS.map(([k,l])=>`<label class="chk"><input type="checkbox" class="mfel" value="${k}" ${checked.includes(k)?"checked":""}><span class="n">${l}</span></label>`).join("")}</div></div>
  <div class="field"><label>结构格式（标题层级）</label><textarea id="mStruct" style="min-height:110px">${esc(f.structure||STRUCT_DEF)}</textarea></div>
  <div class="field"><label>所选对象的格式（字体 / 数字英文字体 / 字号 / 对齐 / 行距单位+数值 / 首行缩进 / 段前 / 段后 / 加粗）</label>
+ <div class="fmtscroll">
  <div class="fmt-head"><span>元素</span><span>字体</span><span>数字英文</span><span>字号</span><span>对齐</span><span>行距单位</span><span>行距值</span><span>首行缩进</span><span>段前pt</span><span>段后pt</span><span>加粗</span></div>
- ${FMT_ELS.map(([k,l])=>`<div class="fmtelwrap" data-el="${k}" style="${checked.includes(k)?"":"display:none"}">${fmtRow(k,l,st[k]||defStyles()[k])}</div>`).join("")}</div>
+ ${FMT_ELS.map(([k,l])=>`<div class="fmtelwrap" data-el="${k}" style="${checked.includes(k)?"":"display:none"}">${fmtRow(k,l,st[k]||defStyles()[k])}</div>`).join("")}</div></div>
  <div class="acts"><button class="btn" id="mCancel">取消</button><button class="btn btn-primary" id="mOk">保存</button></div>`);
+ $("#modalBox").classList.add("wide");
  $$(".mfel").forEach(cb=>cb.onchange=()=>{const w=document.querySelector(`.fmtelwrap[data-el="${cb.value}"]`);if(w)w.style.display=cb.checked?"":"none";});
  /* 行距单位联动：单倍/1.5倍/2倍为固定值（隐藏数值框），最小值/固定值/多倍可自定义数值 */
  FMT_ELS.forEach(([k])=>{const u=$("#fs_"+k+"_lineUnit"),v=$("#fs_"+k+"_lineVal");if(!u||!v)return;
