@@ -88,8 +88,39 @@ function seed(){
  llm:{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""}};}
 let db=null;
 try{db=JSON.parse(localStorage.getItem(LS));}catch(e){}
-if(!db||!Array.isArray(db.products)){db=seed();localStorage.setItem(LS,JSON.stringify(db));}
-function persist(){try{localStorage.setItem(LS,JSON.stringify(db));return true;}catch(e){alert("保存失败：浏览器本地存储空间已满（localStorage 超限），本次内容未写入。\n建议：①删除方案文库/政策资料库中导入了完整长文档的条目（占用空间最大）；②或先点顶部「导出 JSON」备份，再「清空全部数据」后重新导入精简内容。\n当前弹窗内容仍保留，可先复制正文到本地再处理。");return false;}}
+function lsSave(){try{localStorage.setItem(LS,JSON.stringify(db));}catch(e){}}
+if(!db||!Array.isArray(db.products)){db=seed();lsSave();}
+/* ---------- 大容量存储（IndexedDB）：长文本自动转存 ----------
+   localStorage 仅约 5MB；方案文库正文/政策正文/产品核心参数/终稿等长文档在容量不足时
+   自动转存到 IndexedDB（数百 MB 配额），localStorage 仅保留占位引用，页面加载时自动还原，
+   因此可以直接上传整篇 Word/PDF 长文档入库，不必再担心空间不足。 */
+let _idb=null,bigSeq=Promise.resolve(),bigWarned=false;
+function idbOpen(){if(!_idb)_idb=new Promise((res,rej)=>{try{const rq=indexedDB.open("sbw_big_v1",1);rq.onupgradeneeded=()=>rq.result.createObjectStore("kv");rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error||new Error("IndexedDB 不可用"));}catch(e){rej(e);}});return _idb;}
+function idbTx(mode,fn){return idbOpen().then(d=>new Promise((res,rej)=>{const tx=d.transaction("kv",mode);const r=fn(tx.objectStore("kv"));tx.oncomplete=()=>res(r?r.result:undefined);tx.onerror=()=>rej(tx.error);}));}
+function bigPut(k,v){bigSeq=bigSeq.then(()=>idbTx("readwrite",s=>s.put(v,k))).catch(()=>{if(!bigWarned){bigWarned=true;alert("警告：浏览器大容量存储（IndexedDB）写入失败，长文档内容可能未保存。请尽快点顶部「导出 JSON」备份。");}});return bigSeq;}
+const bigGet=k=>idbTx("readonly",s=>s.get(k));
+const bigDel=k=>{bigSeq=bigSeq.then(()=>idbTx("readwrite",s=>s.delete(k))).catch(()=>{});};
+const bigClear=()=>{bigSeq=bigSeq.then(()=>idbTx("readwrite",s=>s.clear())).catch(()=>{});};
+const BIG_FIELDS={products:"params",proposals:"content",policies:"summary"};
+const BIG_MIN=2000;
+const isBigMark=v=>v&&typeof v==="object"&&typeof v.__big==="string";
+function bigSlim(d){const out=Object.assign({},d);
+ for(const list in BIG_FIELDS){const f=BIG_FIELDS[list];out[list]=(d[list]||[]).map(r=>{const v=r[f];
+  if(typeof v==="string"&&v.length>BIG_MIN){const k=list+"/"+r.id+"/"+f;bigPut(k,v);return Object.assign({},r,{[f]:{__big:k}});}return r;});}
+ if(d.final&&typeof d.final.text==="string"&&d.final.text.length>BIG_MIN){bigPut("final/text",d.final.text);out.final=Object.assign({},d.final,{text:{__big:"final/text"}});}
+ return out;}
+function persist(){
+ try{localStorage.setItem(LS,JSON.stringify(db));return true;}
+ catch(e){
+  try{localStorage.setItem(LS,JSON.stringify(bigSlim(db)));toast("检测到本地存储容量不足：长文本内容已自动转入浏览器大容量存储（IndexedDB），数据已保存、正常使用不受影响");return true;}
+  catch(e2){alert("保存失败：浏览器本地存储空间已满且自动转存失败。\n建议：先点顶部「导出 JSON」备份，再「清空全部数据」后重新导入。\n当前弹窗内容仍保留，可先复制正文到本地再处理。");return false;}
+ }
+}
+/* 页面加载时把 IndexedDB 中的长文本还原到对应字段（localStorage 里存的是占位引用） */
+async function hydrateBig(){const jobs=[];
+ for(const list in BIG_FIELDS){const f=BIG_FIELDS[list];for(const r of (db[list]||[])){if(isBigMark(r[f])){const k=r[f].__big;jobs.push(bigGet(k).then(v=>{r[f]=v==null?"":v;}).catch(()=>{r[f]="";}));}}}
+ if(db.final&&isBigMark(db.final.text)){jobs.push(bigGet("final/text").then(v=>{db.final.text=v==null?"":v;}).catch(()=>{db.final.text="";}));}
+ await Promise.all(jobs);}
 db.llm=db.llm||{provider:"deepseek",baseUrl:"https://api.deepseek.com",model:"deepseek-chat",key:""};
 db.ppt=db.ppt||{engine:"local",zwAppId:"",zwApiKey:"",zwApiSecret:"",zwTheme:"auto",zwProxy:""};
 if(db.ppt.zwProxy===undefined)db.ppt.zwProxy="";
@@ -100,15 +131,17 @@ if(!Array.isArray(db.formats)||!db.formats.length)db.formats=seed().formats;
 if(!Array.isArray(db.skills)||!db.skills.length)db.skills=seed().skills;
 if(!Array.isArray(db.fundOptions))db.fundOptions=[];
 /* 兼容旧数据：补齐预置资金来源选项（用户自增项保留在后） */
-(()=>{let ch=false;for(const o of seed().fundOptions){if(!db.fundOptions.includes(o)){db.fundOptions.splice(db.fundOptions.includes("其他")?db.fundOptions.indexOf("其他"):db.fundOptions.length,0,o);ch=true;}}if(db.fundOptions.includes("其他")&&db.fundOptions.indexOf("其他")!==db.fundOptions.length-1){db.fundOptions=db.fundOptions.filter(x=>x!=="其他").concat("其他");ch=true;}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
+(()=>{let ch=false;for(const o of seed().fundOptions){if(!db.fundOptions.includes(o)){db.fundOptions.splice(db.fundOptions.includes("其他")?db.fundOptions.indexOf("其他"):db.fundOptions.length,0,o);ch=true;}}if(db.fundOptions.includes("其他")&&db.fundOptions.indexOf("其他")!==db.fundOptions.length-1){db.fundOptions=db.fundOptions.filter(x=>x!=="其他").concat("其他");ch=true;}if(ch)lsSave();})();
 /* 兼容旧数据：移除已废弃的历史预置资金来源选项 */
-(()=>{const HIST=["财政性资金","学校自筹"];const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!HIST.includes(x));if(db.fundOptions.length!==n)localStorage.setItem(LS,JSON.stringify(db));})();
+(()=>{const HIST=["财政性资金","学校自筹"];const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!HIST.includes(x));if(db.fundOptions.length!==n)lsSave();})();
 /* 兼容旧数据：移除误录入的纯数字无效资金来源选项（如“1”） */
-(()=>{const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!/^\d+$/.test(String(x).trim()));if(db.fundOptions.length!==n)localStorage.setItem(LS,JSON.stringify(db));})();
+(()=>{const n=db.fundOptions.length;db.fundOptions=db.fundOptions.filter(x=>!/^\d+$/.test(String(x).trim()));if(db.fundOptions.length!==n)lsSave();})();
 /* 兼容旧数据：预置技能按名补齐（含新增的“去 AI 味润色”） */
-(()=>{let ch=false;for(const k of seed().skills){if(!db.skills.some(x=>x.name===k.name)){db.skills.push({id:uid(),name:k.name,desc:k.desc,prompt:k.prompt,seed:1});ch=true;}}if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
+(()=>{let ch=false;for(const k of seed().skills){if(!db.skills.some(x=>x.name===k.name)){db.skills.push({id:uid(),name:k.name,desc:k.desc,prompt:k.prompt,seed:1});ch=true;}}if(ch)lsSave();})();
 /* 兼容旧数据：预置产品的类别同步为最新种子值（用户自建产品不动） */
-(()=>{const sp=seed().products;let ch=false;db.products.forEach(p=>{if(!p.seed)return;const s=sp.find(x=>x.name===p.name);if(s&&p.cat!==s.cat){p.cat=s.cat;ch=true;}});if(ch)localStorage.setItem(LS,JSON.stringify(db));})();
+(()=>{const sp=seed().products;let ch=false;db.products.forEach(p=>{if(!p.seed)return;const s=sp.find(x=>x.name===p.name);if(s&&p.cat!==s.cat){p.cat=s.cat;ch=true;}});if(ch)lsSave();})();
+/* 启动时主动减负：localStorage 已接近/达到上限时，立即把长文本转存到 IndexedDB 释放空间 */
+try{localStorage.setItem(LS,JSON.stringify(db));}catch(e){try{localStorage.setItem(LS,JSON.stringify(bigSlim(db)));}catch(e2){}}
 const PROVIDERS={deepseek:{base:"https://api.deepseek.com",model:"deepseek-chat"},qwen:{base:"https://dashscope.aliyuncs.com/compatible-mode/v1",model:"qwen-plus"},doubao:{base:"https://ark.cn-beijing.volces.com/api/v3",model:"doubao-1-5-pro-32k-250115"},custom:{base:"",model:""}};
 
 /* ---------- 渲染 ---------- */
@@ -496,7 +529,7 @@ document.addEventListener("click",e=>{
  if(ib){const k=EXTRA_SKILLS[+ib.dataset.install];if(k){db.skills.push({id:uid(),name:k.name,desc:k.desc,prompt:k.prompt});persist();renderGen();skillMgr();toast("已安装技能："+k.name);}return;}
  const bt=e.target.closest("button[data-act]");
  if(bt){const{act,kind,id}=bt.dataset;
-  if(act==="del"){if(!confirm("确定删除该条目？"))return;db[KIND[kind]]=db[KIND[kind]].filter(x=>x.id!==id);persist();renderAll();return;}
+  if(act==="del"){if(!confirm("确定删除该条目？"))return;db[KIND[kind]]=db[KIND[kind]].filter(x=>x.id!==id);if(BIG_FIELDS[KIND[kind]])bigDel(KIND[kind]+"/"+id+"/"+BIG_FIELDS[KIND[kind]]);persist();renderAll();return;}
   if(act==="edit"){({product:()=>libForm(id),hardware:()=>hwForm(id),proposal:()=>proposalForm(id),policy:()=>policyForm(id),format:()=>formatForm(id),skill:()=>skillForm(id)})[kind]();return;}
   if(act==="view"){const p=db.products.find(x=>x.id===id);openModal(`<h3>${esc(p.name)} · 完整核心参数</h3><div class="rte" style="max-height:420px">${/<[a-z][\s\S]*>/i.test(p.params)?p.params:esc(p.params).replace(/\r?\n/g,"<br>")}</div><div class="acts"><button class="btn btn-primary" id="mOk">关闭</button></div>`);$("#mOk").onclick=closeModal;return;}
   if(act==="copy"){const p=db.proposals.find(x=>x.id===id);copyText(p.keypoints);return;}
@@ -523,7 +556,7 @@ $("#btnExport").onclick=exportJson;$("#btnExport2").onclick=exportJson;
 $("#btnImportTop").onclick=()=>$("#importFile").click();$("#btnImport2").onclick=()=>$("#importFile").click();
 $("#importFile").onchange=e=>{if(e.target.files[0])importJson(e.target.files[0]);e.target.value="";};
 $("#btnClearSeed").onclick=()=>{if(!confirm("仅删除预置示例数据，保留您自己录入的内容，确定？"))return;for(const k of["products","hardware","proposals","policies","todos","formats","skills"])db[k]=db[k].filter(x=>!x.seed);persist();renderAll();toast("示例已清空");};
-$("#btnClearAll").onclick=()=>{if(!confirm("将删除全部数据（含您录入的内容），确定？"))return;if(!confirm("再次确认：清空后不可恢复（除非有备份），继续？"))return;db={products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm};persist();renderAll();};
+$("#btnClearAll").onclick=()=>{if(!confirm("将删除全部数据（含您录入的内容），确定？"))return;if(!confirm("再次确认：清空后不可恢复（除非有备份），继续？"))return;db={products:[],hardware:[],proposals:[],policies:[],todos:[],formats:[],skills:[],fundOptions:[],llm:db.llm};bigClear();persist();renderAll();};
 /* 大模型配置 */
 $("#llmProvider").onchange=e=>{db.llm.provider=e.target.value;const p=PROVIDERS[e.target.value];if(p&&p.base){db.llm.baseUrl=p.base;db.llm.model=p.model;}persist();syncLlmUi();};
 $("#llmBase").onchange=e=>{db.llm.baseUrl=e.target.value.trim();persist();};
@@ -690,10 +723,10 @@ function insertToc(text){
  else lines.splice(ti+1,0,"",...toc);
  return lines.join("\n");
 }
-/* Word 导出用 TOC 域：导出后章节段落带大纲级别 2/3（样式仍为正文），域 \o "2-3" 收集，\h 支持点击跳转；打开后右键“更新域”生成带页码目录 */
+/* Word 导出用 TOC 域：章/节/目分别为 Word 标题 1~3，域 \o "1-3" 收集，\h 支持点击跳转；打开后右键“更新域”生成带页码目录 */
 function wordTocField(fmt){
  const headCss=fmt&&fmt.styles.tbTitle?cssFor(fmt.styles.tbTitle):"font-size:16pt;font-weight:bold";
- return `<p class="MsoNormal" style="text-align:center;${headCss}">目　录</p><p class="MsoNormal"><span style='mso-element:field-begin'></span><span style='mso-hide:all'>TOC \\o "2-3" \\h \\z \\u</span><span style='mso-element:field-separator'></span><span style="color:#666">目录将自动生成：请在 Word 中右键此处选择“更新域”，即可得到带页码的目录，按住 Ctrl 点击目录条目可跳转对应章节。</span><span style='mso-element:field-end'></span></p><br>`;
+ return `<p class="MsoNormal" style="text-align:center;${headCss}">目　录</p><p class="MsoNormal"><span style='mso-element:field-begin'></span><span style='mso-hide:all'>TOC \\o "1-3" \\h \\z \\u</span><span style='mso-element:field-separator'></span><span style="color:#666">目录将自动生成：请在 Word 中右键此处选择“更新域”，即可得到带页码的目录，按住 Ctrl 点击目录条目可跳转对应章节。</span><span style='mso-element:field-end'></span></p><br>`;
 }
 function html2mdLines(html){
  const doc=new DOMParser().parseFromString(html,"text/html");const out=[];
@@ -780,7 +813,7 @@ function cssFor(st){if(!st)return "";normStyle(st);const fam=st.latin?`'${st.lat
  const pt=SIZE_PT[st.size]||14;
  const lh=st.lineUnit==="pt"?`${st.lineVal}pt;mso-line-height-rule:exactly`:`${Math.round((st.lineVal||1)*100)}%`;
  const indent=st.indent?`text-indent:${st.indent*pt}pt;`:"";
- return `font-family:${fam};font-size:${pt}pt;${st.bold?"font-weight:bold;":""}text-align:${st.align};${indent}line-height:${lh};margin:${st.spaceBefore||0}pt 0 ${st.spaceAfter||0}pt 0;`;}
+ return `font-family:${fam};font-size:${pt}pt;${st.bold?"font-weight:bold;":"font-weight:normal;"}text-align:${st.align};${indent}line-height:${lh};margin:${st.spaceBefore||0}pt 0 ${st.spaceAfter||0}pt 0;`;}
 /* 待补充/注释内容识别：（待核实/待补充/待确认/待填写/待提供…）与【…】标注，预览与导出 Word 时标红提醒 */
 const TODO_RE=/（待(?:核实|补充|确认|填写|提供)[^）]{0,80}）|【[^】]{0,80}】/g;
 function redMark(line){return line.replace(TODO_RE,m=>`<span style="color:#c00000;font-weight:bold">${m}</span>`);}
@@ -795,6 +828,8 @@ function styleFor(fmt,k){if(!fmt)return "";
 function md2html(text,fmt){
  const S=k=>fmt?cssFor(fmt.styles[k]):"";
  const SH=k=>styleFor(fmt,k);
+ /* 标题直接格式：强制黑色，避免 Word 把 h1~h5 映射成内置标题样式后显示主题蓝色 */
+ const HC=k=>SH(k)+"color:#000;";
  const lines=esc(text).split(/\r?\n/);let out=[],tbl=[];
  const flush=()=>{if(!tbl.length)return;const rows=tbl.filter(r=>!r.split("|").every(c=>/^[\s:-]*$/.test(c)));
   out.push(`<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;width:100%;${S("table")}">${rows.map(r=>"<tr>"+r.split("|").filter((c,i,a)=>!(i===0&&c==="")&&!(i===a.length-1&&c==="")).map(c=>`<td style="${S("table")}">${redMark(c.trim())}</td>`).join("")+"</tr>").join("")}</table>`);tbl=[];};
@@ -803,13 +838,15 @@ function md2html(text,fmt){
   flush();
   if(!l.trim()){return;}
   l=l.replace(/\*\*/g,""); /* 去掉模型可能输出的加粗标记，避免干扰标题识别 */
-  if(idx===0&&!/^[一二三四五六七八九十]+、/.test(l)){out.push(`<h1 style="${S("title")||TITLE_CSS_DEFAULT}">${redMark(l)}</h1>`);return;}
-  if(/^([一二三四五六七八九十]+、)/.test(l))return out.push(`<h2 style="${SH("h1")}">${redMark(l)}</h2>`);
-  if(/^附件/.test(l))return out.push(`<h2 style="${SH("h1")}">${redMark(l)}</h2>`);
-  if(/^[（(][一二三四五六七八九十]+[)）]/.test(l))return out.push(`<h3 style="${SH("h2")}">${redMark(l)}</h3>`);
-  if(/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(l))return out.push(`<h5 style="${SH("h5")}">${redMark(l)}</h5>`);
-  if(/^[（(]\d+[)）]/.test(l))return out.push(`<h4 style="${SH("h4")}">${redMark(l)}</h4>`);
-  if(/^\d+[\.、]/.test(l))return out.push(`<h4 style="${SH("h3")}">${redMark(l)}</h4>`);
+  /* 文档标题：不作为标题层级，导出 Word 后为“正文”样式段落+直接格式 */
+  if(idx===0&&!/^[一二三四五六七八九十]+、/.test(l)){out.push(`<p class="MsoNormal" style="${S("title")||TITLE_CSS_DEFAULT}">${redMark(l)}</p>`);return;}
+  /* 章→Word 标题1(H1)、节→标题2(H2)、目→标题3(H3)、子目→标题4(H4)、①→标题5(H5)，正文保持 Word“正文”样式 */
+  if(/^([一二三四五六七八九十]+、)/.test(l))return out.push(`<h1 style="${HC("h1")}">${redMark(l)}</h1>`);
+  if(/^附件/.test(l))return out.push(`<h1 style="${HC("h1")}">${redMark(l)}</h1>`);
+  if(/^[（(][一二三四五六七八九十]+[)）]/.test(l))return out.push(`<h2 style="${HC("h2")}">${redMark(l)}</h2>`);
+  if(/^[①②③④⑤⑥⑦⑧⑨⑩]/.test(l))return out.push(`<h5 style="${HC("h5")}">${redMark(l)}</h5>`);
+  if(/^[（(]\d+[)）]/.test(l))return out.push(`<h4 style="${HC("h4")}">${redMark(l)}</h4>`);
+  if(/^\d+[\.、]/.test(l))return out.push(`<h3 style="${HC("h3")}">${redMark(l)}</h3>`);
   if(/^(表|Table)\s?\d/.test(l))return out.push(`<p style="${S("tbTitle")}">${redMark(l)}</p>`);
   if(/^(图|Fig)\.?\s?\d/.test(l))return out.push(`<p style="${S("fig")}">${redMark(l)}</p>`);
   out.push(`<p style="${S("body")}">${redMark(l)}</p>`);
@@ -834,27 +871,25 @@ $("#btnWord").onclick=()=>{const text=$("#genResult").value;if(!text.trim()){ale
  const title=($("#fProject").value.trim()||"方案")+"_"+$("#fType").value;
  exportWordDoc(text,title,fmt);
  toast(fmt?`已导出 Word（套用格式：${fmt.name}）`:"已导出 Word");};
-/* Word 导出“扁平化”：标题标签 h1~h5 一律改为普通正文段落（MsoNormal）+ 直接格式，
-   避免 Word 把标签映射成内置“标题 1~5”样式（标题变 H1、编号条目变蓝色标题样式）；
-   一级章（一、）/二级节（（一））保留大纲级别 2/3 供 TOC 域收集，文档标题不设大纲级别 */
-function wordFlatten(bodyHtml){
- const OUTLINE={h2:2,h3:3};const tds=[];
- bodyHtml=bodyHtml.replace(/<td style="[^"]*">[\s\S]*?<\/td>/g,m=>{tds.push(m);return "\u0000"+(tds.length-1)+"\u0000";});
- bodyHtml=bodyHtml.replace(/<(h[1-5])([^>]*)>([\s\S]*?)<\/\1>/g,(m,tag,attrs,inner)=>{
-  const ol=OUTLINE[tag]?"mso-outline-level:"+OUTLINE[tag]+";":"";
+/* Word 导出标题层级：章/节/目/子目/① 保留 h1~h5 标签，Word 自动对应内置“标题 1~5”（H1~H5），
+   字体/字号/行距等按用户配置以直接格式覆盖，并强制黑色避免主题蓝；
+   文档标题、正文等其他段落为 Word“正文”样式（MsoNormal）+直接格式 */
+function wordHeadings(bodyHtml){
+ bodyHtml=bodyHtml.replace(/<h([1-5])([^>]*)>([\s\S]*?)<\/h\1>/g,(m,lv,attrs,inner)=>{
   const style=(attrs.match(/style="([^"]*)"/)||[])[1]||"";
-  return `<p class="MsoNormal" style="${ol}${style}">${inner}</p>`;});
+  const css=/color\s*:/.test(style)?style:style+"color:#000;";
+  return `<h${lv} style="${css}">${inner}</h${lv}>`;});
  bodyHtml=bodyHtml.replace(/<p>/g,'<p class="MsoNormal">').replace(/<p style=/g,'<p class="MsoNormal" style=');
- return bodyHtml.replace(/\u0000(\d+)\u0000/g,(m,i)=>tds[+i]);
+ return bodyHtml;
 }
-/* 统一的 Word 导出管线：纯文本目录替换为 TOC 域、套用格式样式；全部段落为 Word“正文”样式+直接格式，严格按用户配置的格式输出 */
+/* 统一的 Word 导出管线：纯文本目录替换为 TOC 域；章→标题1(H1)、节→标题2(H2)、目→标题3(H3)、子目→标题4(H4)、①→标题5(H5)；文档标题与正文为 Word“正文”样式，其余直接格式严格按用户配置输出 */
 function exportWordDoc(text,fileName,fmt){
- let bodyHtml=wordFlatten(md2html(stripTocBlock(text.split(/\r?\n/)).join("\n"),fmt));
+ let bodyHtml=wordHeadings(md2html(stripTocBlock(text.split(/\r?\n/)).join("\n"),fmt));
  const tocField=wordTocField(fmt);
- const i=bodyHtml.indexOf("</p>");
- if(i>=0)bodyHtml=bodyHtml.slice(0,i+4)+tocField+bodyHtml.slice(i+4);
+ /* 首段为文档标题时目录插在标题后；若首段就是章标题则目录置顶 */
+ if(/^<p[ >]/.test(bodyHtml)){const i=bodyHtml.indexOf("</p>");bodyHtml=bodyHtml.slice(0,i+4)+tocField+bodyHtml.slice(i+4);}
  else bodyHtml=tocField+bodyHtml;
- const css=`@page WordSection1{size:595.3pt 841.9pt;margin:72.0pt 90.0pt 72.0pt 90.0pt;}div.WordSection1{page:WordSection1;}body{font-family:'宋体',serif;font-size:12.0pt;color:#000;}p.MsoNormal{margin:0cm;font-size:12.0pt;font-family:'宋体',serif;color:#000;}`;
+ const css=`@page WordSection1{size:595.3pt 841.9pt;margin:72.0pt 90.0pt 72.0pt 90.0pt;}div.WordSection1{page:WordSection1;}body{font-family:'宋体',serif;font-size:12.0pt;color:#000;}p.MsoNormal{margin:0cm;font-size:12.0pt;font-family:'宋体',serif;color:#000;}h1,h2,h3,h4,h5{color:#000;}`;
  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>${esc(fileName)}</title><style>${css}</style></head><body><div class="WordSection1">${bodyHtml}</div></body></html>`;
  const blob=new Blob(["\ufeff",html],{type:"application/msword"});
  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fileName+".doc";a.click();}
@@ -1248,9 +1283,12 @@ $("#btnPolCheck").onclick=async e=>{e.target.disabled=true;try{const n=await che
 $("#btnPolFetch").onclick=async e=>{e.target.disabled=true;try{const n=await fetchNewPolicies();toast(n?`检索完成：新入库 ${n} 条（标蓝待复核）`:"检索完成：暂无新政策入库");}catch(err){alert("检索失败："+err.message);}e.target.disabled=false;};
 $("#btnPolSched").onclick=polScanModal;
 
-renderAll();
-$("#btnTrainPanel").onclick=trainModal;
-renderTplFiles();
-updateChecklist();
-syncFinalUi();
-refreshPptOutline(false);
+/* 先从大容量存储还原长文本，再渲染界面（方案文库/政策资料库中上传的长文档自动从 IndexedDB 恢复） */
+hydrateBig().catch(()=>{}).finally(()=>{
+ renderAll();
+ $("#btnTrainPanel").onclick=trainModal;
+ renderTplFiles();
+ updateChecklist();
+ syncFinalUi();
+ refreshPptOutline(false);
+});
