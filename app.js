@@ -764,10 +764,20 @@ function html2mdLines(html){
  return out;
 }
 function paramsToLines(params){return /<[a-z][\s\S]*>/i.test(params)?html2mdLines(params):textOf(params).trim().split(/\r?\n/);}
+/* 编号小点分行：同一行内含多个（1）（2）…或①②…编号时，从每个编号处拆为独立一行，避免长句挤成一团 */
+function splitEnumLines(lines){
+ const m="[（(]\\d+[)）]|[①②③④⑤⑥⑦⑧⑨⑩]";
+ const re=new RegExp(m,"g"),pre=new RegExp("(?="+m+")");
+ return lines.flatMap(l=>{
+  const s=l.replace(/\s+$/,""),cnt=(s.match(re)||[]).length;
+  if(cnt<2)return [s];
+  return s.split(pre).map(x=>x.trim()).filter(Boolean);
+ });
+}
 function appendixText(prods){
  if(!prods.length)return "";
  const L=["","附件"];const zh="一二三四五六七八九十";
- prods.forEach((p,i)=>{L.push(`附件${zh[i]||i+1}：${p.name}——核心参数`);L.push("");const lines=paramsToLines(p.params).filter((l,j,a)=>l.trim()||((a[j-1]||"").trim()&&j<a.length-1));L.push(...(lines.length?lines:["（该产品核心参数为空，请到产品资料库补充）"]));L.push("");});
+ prods.forEach((p,i)=>{L.push(`附件${zh[i]||i+1}：${p.name}——核心参数`);L.push("");const lines=splitEnumLines(paramsToLines(p.params)).filter((l,j,a)=>l.trim()||((a[j-1]||"").trim()&&j<a.length-1));L.push(...(lines.length?lines:["（该产品核心参数为空，请到产品资料库补充）"]));L.push("");});
  return "\n"+L.join("\n");
 }
 function gatherGen(){
